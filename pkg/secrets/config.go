@@ -43,5 +43,14 @@ func ConfigsFor(namespace string) []extensionssecretsmanager.SecretConfigWithOpt
 			// during the initial rotation phase
 			Options: []secretsmanager.GenerateOption{secretsmanager.SignedByCA(CAName)},
 		},
+		{
+			Config: &secretsutils.CertificateSecretConfig{
+				Name:                        constants.AuditlogForwarderClientTLSSecretName,
+				CommonName:                  "kube-apiserver",
+				CertType:                    secretsutils.ClientCert,
+				SkipPublishingCACertificate: true,
+			},
+			Options: []secretsmanager.GenerateOption{secretsmanager.SignedByCA(CAName, secretsmanager.UseCurrentCA)},
+		},
 	}
 }

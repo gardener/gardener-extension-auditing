@@ -142,12 +142,12 @@ func (r *auditlogForwarder) Deploy(ctx context.Context) error {
 		return err
 	}
 
-	_, found := r.secretsManager.Get(secrets.CAName)
+	caBundle, found := r.secretsManager.Get(secrets.CAName)
 	if !found {
 		return fmt.Errorf("secret %q not found", secrets.CAName)
 	}
 
-	data, err := r.computeResourcesData(generatedSecrets)
+	data, err := r.computeResourcesData(generatedSecrets, caBundle)
 	if err != nil {
 		return err
 	}
@@ -193,14 +193,15 @@ func (r *auditlogForwarder) WaitCleanup(ctx context.Context) error {
 	return managedresources.WaitUntilDeleted(timeoutCtx, r.client, r.namespace, managedResourceName)
 }
 
-func (r *auditlogForwarder) computeResourcesData(generatedSecrets map[string]*corev1.Secret) (map[string][]byte, error) {
+func (r *auditlogForwarder) computeResourcesData(generatedSecrets map[string]*corev1.Secret, caBundle *corev1.Secret) (map[string][]byte, error) {
 	forwarderConfiguration := forwarderconfigv1alpha1.AuditlogForwarder{
 		Server: forwarderconfigv1alpha1.Server{
 			Port: 10443,
 			TLS: forwarderconfigv1alpha1.TLS{
 				CertFile: "/etc/auditlog-forwarder/tls/tls.crt",
 				KeyFile:  "/etc/auditlog-forwarder/tls/tls.key",
-				// ClientCAFile: "/etc/auditlog-forwarder/tls/ca.crt",
+				// mTLS: validate kube-apiserver client certs signed by our CA
+				ClientCAFile: "/etc/auditlog-forwarder/ca/ca.crt",
 			},
 		},
 		InjectAnnotations: map[string]string{
@@ -317,6 +318,11 @@ func (r *auditlogForwarder) computeResourcesData(generatedSecrets map[string]*co
 										ReadOnly:  true,
 										MountPath: "/etc/auditlog-forwarder/tls",
 									},
+									{
+										Name:      "ca",
+										ReadOnly:  true,
+										MountPath: "/etc/auditlog-forwarder/ca",
+									},
 								}
 
 								// Add volume mounts for each HTTP output TLS secret
@@ -351,6 +357,30 @@ func (r *auditlogForwarder) computeResourcesData(generatedSecrets map[string]*co
 								VolumeSource: corev1.VolumeSource{
 									Secret: &corev1.SecretVolumeSource{
 										SecretName: generatedSecrets[constants.AuditlogForwarderTLSSecretName].Name,
+										Items: []corev1.KeyToPath{
+											{
+												Key:  secretsutils.DataKeyCertificate,
+												Path: "tls.crt",
+											},
+											{
+												Key:  secretsutils.DataKeyPrivateKey,
+												Path: "tls.key",
+											},
+										},
+									},
+								},
+							},
+							{
+								Name: "ca",
+								VolumeSource: corev1.VolumeSource{
+									Secret: &corev1.SecretVolumeSource{
+										SecretName: caBundle.Name,
+										Items: []corev1.KeyToPath{
+											{
+												Key:  secretsutils.DataKeyCertificateBundle,
+												Path: "ca.crt",
+											},
+										},
 									},
 								},
 							},
@@ -439,11 +469,18 @@ func (r *auditlogForwarder) computeResourcesData(generatedSecrets map[string]*co
 		Contexts: []clientcmdv1.NamedContext{{
 			Name: constants.ApplicationName,
 			Context: clientcmdv1.Context{
-				Cluster: constants.ApplicationName,
+				Cluster:  constants.ApplicationName,
+				AuthInfo: constants.ApplicationName,
 			},
 		}},
 		CurrentContext: constants.ApplicationName,
-		AuthInfos:      []clientcmdv1.NamedAuthInfo{},
+		AuthInfos: []clientcmdv1.NamedAuthInfo{{
+			Name: constants.ApplicationName,
+			AuthInfo: clientcmdv1.AuthInfo{
+				ClientCertificateData: generatedSecrets[constants.AuditlogForwarderClientTLSSecretName].Data[secretsutils.DataKeyCertificate],
+				ClientKeyData:         generatedSecrets[constants.AuditlogForwarderClientTLSSecretName].Data[secretsutils.DataKeyPrivateKey],
+			},
+		}},
 	}
 
 	kubeAPIServerKubeConfig, err := runtime.Encode(clientcmdlatest.Codec, kubeConfig)
