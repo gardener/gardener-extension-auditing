@@ -6,12 +6,11 @@ package kapiserver
 
 import (
 	"context"
-	"errors"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"slices"
-	"strconv"
 	"strings"
-	"time"
 
 	"github.com/gardener/gardener/extensions/pkg/controller"
 	extensionssecretsmanager "github.com/gardener/gardener/extensions/pkg/util/secret/manager"
@@ -20,18 +19,14 @@ import (
 	"github.com/gardener/gardener/extensions/pkg/webhook/controlplane/genericmutator"
 	v1beta1constants "github.com/gardener/gardener/pkg/apis/core/v1beta1/constants"
 	extensionsv1alpha1 "github.com/gardener/gardener/pkg/apis/extensions/v1alpha1"
-	secretsutils "github.com/gardener/gardener/pkg/utils/secrets"
-	secretsmanager "github.com/gardener/gardener/pkg/utils/secrets/manager"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/gardener/gardener-extension-auditing/pkg/constants"
-	"github.com/gardener/gardener-extension-auditing/pkg/secrets"
 )
 
 // Byte size suffixes.
@@ -56,7 +51,7 @@ const (
 	auditWebhookTruncateMaxBatchSize  = "--audit-webhook-truncate-max-batch-size="
 
 	auditWebhookConfigVolumeName   = "audit-webhook-kubeconfig" // #nosec G101
-	auditWebhookCABundleVolumeName = "audit-webhook-ca-bundle"
+	auditWebhookCABundleVolumeName = "audit-webhook-ca-bundle"  // retained unused constant for backward compatibility (will be deprecated)
 )
 
 type ensurer struct {
@@ -108,25 +103,25 @@ func (e *ensurer) EnsureKubeAPIServerDeployment(ctx context.Context, gctx extens
 			return nil
 		}
 
-		// we expect that the CA bundle secret is handled by the lifecycle controller
-		caBundleSecret, err := GetLatestIssuedCABundleSecret(ctx, e.client, newDeployment.Namespace)
-		if err != nil {
-			if !errors.Is(err, &MissingCASecretError{}) {
-				return err
-			}
+		data := secret.Data["kubeconfig"]
+		if len(data) != 0 {
+			var (
+				sha           = sha256.Sum256(data)
+				short         = hex.EncodeToString(sha[:])[:8]
+				annotationKey = "auditing.extensions.gardener.cloud/secret-" + short
+			)
 
-			cluster, clusterErr := gctx.GetCluster(ctx)
-			if clusterErr != nil {
-				return clusterErr
+			if newDeployment.Annotations == nil {
+				newDeployment.Annotations = map[string]string{}
 			}
-			if !controller.IsHibernationEnabled(cluster) {
-				return err
+			newDeployment.Annotations[annotationKey] = secret.Name
+			if template.Annotations == nil {
+				template.Annotations = map[string]string{}
 			}
-
-			return nil
+			template.Annotations[annotationKey] = secret.Name
 		}
 
-		e.ensureKubeAPIServerIsMutated(ps, c, caBundleSecret.Name)
+		e.ensureKubeAPIServerIsMutated(ps, c)
 	}
 
 	return nil
@@ -142,7 +137,7 @@ func NewEnsurer(c client.Client, logger logr.Logger) genericmutator.Ensurer {
 
 // ensureKubeAPIServerIsMutated ensures that the kube-apiserver deployment is mutated accordingly
 // so that it is able to communicate with the auditlog-proxy
-func (e *ensurer) ensureKubeAPIServerIsMutated(ps *corev1.PodSpec, c *corev1.Container, caBundleSecretName string) {
+func (e *ensurer) ensureKubeAPIServerIsMutated(ps *corev1.PodSpec, c *corev1.Container) {
 	var (
 		maxEventSize = MB                // 1MB
 		maxBatchSize = maxEventSize * 10 // kube-apiserver will fail to start if batchSize < eventSize, thus explicitly set higher value
@@ -171,38 +166,11 @@ func (e *ensurer) ensureKubeAPIServerIsMutated(ps *corev1.PodSpec, c *corev1.Con
 		MountPath: constants.AuditWebhookConfigDir,
 	})
 
-	c.VolumeMounts = extensionswebhook.EnsureVolumeMountWithName(c.VolumeMounts, corev1.VolumeMount{
-		Name:      auditWebhookCABundleVolumeName,
-		ReadOnly:  true,
-		MountPath: constants.AuditWebhookCADir,
-	})
-
 	ps.Volumes = extensionswebhook.EnsureVolumeWithName(ps.Volumes, corev1.Volume{
 		Name: auditWebhookConfigVolumeName,
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
 				SecretName: constants.AuditWebhookKubeConfigSecretName,
-			},
-		},
-	})
-
-	ps.Volumes = extensionswebhook.EnsureVolumeWithName(ps.Volumes, corev1.Volume{
-		Name: auditWebhookCABundleVolumeName,
-		VolumeSource: corev1.VolumeSource{
-			Projected: &corev1.ProjectedVolumeSource{
-				DefaultMode: ptr.To[int32](420),
-				Sources: []corev1.VolumeProjection{
-					{
-						Secret: &corev1.SecretProjection{
-							Items: []corev1.KeyToPath{
-								{Key: secretsutils.DataKeyCertificateBundle, Path: secretsutils.DataKeyCertificateBundle},
-							},
-							LocalObjectReference: corev1.LocalObjectReference{
-								Name: caBundleSecretName,
-							},
-						},
-					},
-				},
 			},
 		},
 	})
@@ -221,72 +189,4 @@ func auditlogExtensionExists(ctx context.Context, c client.Client, namespace str
 	}
 
 	return false, nil
-}
-
-// GetLatestIssuedCABundleSecret returns the auditlog-proxy latest CA bundle secret
-func GetLatestIssuedCABundleSecret(ctx context.Context, c client.Client, namespace string) (*corev1.Secret, error) {
-	secretList := &corev1.SecretList{}
-	if err := c.List(ctx, secretList, client.InNamespace(namespace), client.MatchingLabels{
-		secretsmanager.LabelKeyBundleFor:       secrets.CAName,
-		secretsmanager.LabelKeyManagedBy:       secretsmanager.LabelValueSecretsManager,
-		secretsmanager.LabelKeyManagerIdentity: secrets.ManagerIdentity,
-	}); err != nil {
-		return nil, err
-	}
-	return getLatestIssuedSecret(secretList.Items)
-}
-
-// getLatestIssuedSecret returns the secret with the "issued-at-time" label that represents the latest point in time
-func getLatestIssuedSecret(secrets []corev1.Secret) (*corev1.Secret, error) {
-	if len(secrets) == 0 {
-		return nil, &MissingCASecretError{}
-	}
-
-	var newestSecret *corev1.Secret
-	var currentIssuedAtTime time.Time
-	for i := range secrets {
-		// if some of the secrets have no "issued-at-time" label
-		// we have a problem since this is the source of truth
-		issuedAt, ok := secrets[i].Labels[secretsmanager.LabelKeyIssuedAtTime]
-		if !ok {
-			return nil, NewMissingIssuedAtTimeError(secrets[i].Name, secrets[i].Namespace)
-		}
-
-		issuedAtUnix, err := strconv.ParseInt(issuedAt, 10, 64)
-		if err != nil {
-			return nil, err
-		}
-
-		issuedAtTime := time.Unix(issuedAtUnix, 0).UTC()
-		if newestSecret == nil || issuedAtTime.After(currentIssuedAtTime) {
-			newestSecret = &secrets[i]
-			currentIssuedAtTime = issuedAtTime
-		}
-	}
-
-	return newestSecret, nil
-}
-
-// MissingCASecretError is an error type that indicates that a CA bundle secret was not found
-type MissingCASecretError struct{}
-
-// Error returns the error as string
-func (e *MissingCASecretError) Error() string {
-	return "CA bundle secret is yet not available"
-}
-
-// MissingIssuedAtTimeError is an error type that indicates that a CA bundle secret is missing the issued-at-time label
-type MissingIssuedAtTimeError struct {
-	secretName string
-	namespace  string
-}
-
-// NewMissingIssuedAtTimeError creates a new MissingIssuedAtTimeError error
-func NewMissingIssuedAtTimeError(secretName, namespace string) *MissingIssuedAtTimeError {
-	return &MissingIssuedAtTimeError{secretName: secretName, namespace: namespace}
-}
-
-// Error returns the error as string
-func (e *MissingIssuedAtTimeError) Error() string {
-	return fmt.Sprintf(`CA bundle secret %s in namespace %s has no "issued-at-time" label`, e.secretName, e.namespace)
 }

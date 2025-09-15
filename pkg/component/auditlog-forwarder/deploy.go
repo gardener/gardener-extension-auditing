@@ -461,9 +461,9 @@ func (r *auditlogForwarder) computeResourcesData(generatedSecrets map[string]*co
 		Clusters: []clientcmdv1.NamedCluster{{
 			Name: constants.ApplicationName,
 			Cluster: clientcmdv1.Cluster{
-				Server:                fmt.Sprintf("https://%s.%s.svc:10443/audit", constants.AuditlogForwarder, r.namespace),
-				CertificateAuthority:  fmt.Sprintf("%s/%s", constants.AuditWebhookCADir, secretsutils.DataKeyCertificateBundle),
-				InsecureSkipTLSVerify: false,
+				Server:                   fmt.Sprintf("https://%s.%s.svc:10443/audit", constants.AuditlogForwarder, r.namespace),
+				CertificateAuthorityData: caBundle.Data[secretsutils.DataKeyCertificateBundle],
+				InsecureSkipTLSVerify:    false,
 			},
 		}},
 		Contexts: []clientcmdv1.NamedContext{{
