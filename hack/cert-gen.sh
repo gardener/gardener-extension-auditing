@@ -13,8 +13,8 @@ cert_dir="$repo_root/example/local-setup/dev/certs"
 
 mkdir -p "$cert_dir"
 
-if [[ -s "$cert_dir/tls.key" ]]; then
-    echo "Development certificate found at $cert_dir. Skipping generation..."
+if [[ -s "$cert_dir/ca.crt" ]]; then
+    echo "Development certificates found at $cert_dir. Skipping generation..."
     exit 0
 fi
 
