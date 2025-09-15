@@ -158,12 +158,12 @@ func (e *ensurer) ensureKubeAPIServerIsMutated(ps *corev1.PodSpec, c *corev1.Con
 		return strings.HasPrefix(x, "--audit-") && !strings.HasPrefix(x, auditPolicyFilePrefix)
 	})
 
-	c.Command = extensionswebhook.EnsureStringWithPrefix(c.Command, auditWebhookConfigFilePrefix, constants.AuditWebhookConfigDir+"/kubeconfig")
-	c.Command = extensionswebhook.EnsureStringWithPrefix(c.Command, auditWebhookBatchMaxSizePrefix, fmt.Sprintf("%v", batchMaxSize))
-	c.Command = extensionswebhook.EnsureStringWithPrefix(c.Command, auditWebhookBatchThrottleQPS, fmt.Sprintf("%v", batchThrottleQPS))
-	c.Command = extensionswebhook.EnsureStringWithPrefix(c.Command, auditWebhookTruncateEnabledPrefix, "true")
-	c.Command = extensionswebhook.EnsureStringWithPrefix(c.Command, auditWebhookTruncateMaxEventSize, fmt.Sprintf("%v", maxEventSize))
-	c.Command = extensionswebhook.EnsureStringWithPrefix(c.Command, auditWebhookTruncateMaxBatchSize, fmt.Sprintf("%v", maxBatchSize))
+	c.Args = extensionswebhook.EnsureStringWithPrefix(c.Args, auditWebhookConfigFilePrefix, constants.AuditWebhookConfigDir+"/kubeconfig")
+	c.Args = extensionswebhook.EnsureStringWithPrefix(c.Args, auditWebhookBatchMaxSizePrefix, fmt.Sprintf("%v", batchMaxSize))
+	c.Args = extensionswebhook.EnsureStringWithPrefix(c.Args, auditWebhookBatchThrottleQPS, fmt.Sprintf("%v", batchThrottleQPS))
+	c.Args = extensionswebhook.EnsureStringWithPrefix(c.Args, auditWebhookTruncateEnabledPrefix, "true")
+	c.Args = extensionswebhook.EnsureStringWithPrefix(c.Args, auditWebhookTruncateMaxEventSize, fmt.Sprintf("%v", maxEventSize))
+	c.Args = extensionswebhook.EnsureStringWithPrefix(c.Args, auditWebhookTruncateMaxBatchSize, fmt.Sprintf("%v", maxBatchSize))
 
 	c.VolumeMounts = extensionswebhook.EnsureVolumeMountWithName(c.VolumeMounts, corev1.VolumeMount{
 		Name:      auditWebhookConfigVolumeName,
