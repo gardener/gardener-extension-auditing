@@ -1,0 +1,9 @@
+# See the OWNERS docs at https://go.k8s.io/owners
+
+aliases:
+  extension-auditing-reviewers:
+  - dimityrmirchev
+  - vpnachev
+  extension-auditing-approvers:
+  - dimityrmirchev
+  - vpnachev

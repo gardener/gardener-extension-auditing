@@ -1,0 +1,21 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-auditlog-forwarder-to-echo-server
+  namespace: shoot--local--local
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: auditlog-forwarder
+      app.kubernetes.io/part-of: auditing
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+      - podSelector:
+          matchLabels:
+            app.kubernetes.io/instance: echo-server
+            app.kubernetes.io/name: echo-server
+        namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: echo-server

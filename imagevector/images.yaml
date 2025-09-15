@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: SAP SE or an SAP affiliate company and Gardener contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+---
+images:
+- name: auditlog-forwarder
+  sourceRepository: github.com/gardener/auditlog-forwarder
+  # repository: europe-docker.pkg.dev/gardener-project/releases/gardener/auditlog-forwarder
+  # tag: v0.1.0
+  repository: europe-docker.pkg.dev/gardener-project/snapshots/gardener/auditlog-forwarder
+  tag: v0.1.0-694f40e5c26d209542788ddc8f23e979cfad07c3

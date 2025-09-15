@@ -1,0 +1,70 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: echo-server
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: echo-server
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  revisionHistoryLimit: 0
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: echo-server
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: echo-server
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      containers:
+      - name: echo-server
+        image: {{ include "image" .Values.image }}
+        imagePullPolicy: IfNotPresent
+        args:
+        - --port={{ .Values.config.port }}
+        - --health-port={{ .Values.config.healthPort }}
+        - --tls-cert-file=/tls/tls.crt
+        - --tls-key-file=/tls/tls.key
+        - --tls-client-ca-file=/client-ca/ca.crt
+        {{- if .Values.config.logBody }}
+        - --log-body
+        {{- end }}
+        ports:
+        - name: https
+          containerPort: {{ .Values.config.port }}
+          protocol: TCP
+        - name: health
+          containerPort: {{ .Values.config.healthPort }}
+          protocol: TCP
+        volumeMounts:
+        - name: tls
+          mountPath: /tls
+          readOnly: true
+        - name: client-ca
+          mountPath: /client-ca
+          readOnly: true
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: health
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: health
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      volumes:
+      - name: tls
+        secret:
+          secretName: echo-server-tls
+      - name: client-ca
+        secret:
+          secretName: echo-server-client-ca

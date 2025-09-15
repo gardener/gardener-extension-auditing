@@ -1,0 +1,49 @@
+version: "2"
+run:
+  concurrency: 4
+linters:
+  enable:
+    - gocritic
+    - gosec
+    - importas
+    - revive
+  settings:
+    importas:
+      alias:
+        - pkg: github.com/gardener/gardener-extension-auditing/pkg/apis/config
+          alias: apisconfig
+        - pkg: github.com/gardener/gardener-extension-auditing/pkg/apis/config/v1alpha1
+          alias: configv1alpha1
+        - pkg: github.com/gardener/gardener-extension-auditing/pkg/apis/auditing
+          alias: apisauditing
+        - pkg: github.com/gardener/gardener-extension-auditing/pkg/apis/auditing/v1alpha1
+          alias: auditingv1alpha1
+  exclusions:
+    generated: lax
+    rules:
+      - path: (.+)\.go$
+        text: Error return value of .((os\.)?std(out|err)\..*|.*Close|.*Flush|os\.Remove(All)?|.*printf?|os\.(Un)?Setenv). is not checked
+      - path: (.+)\.go$
+        text: var-naming
+      - path: (.+)\.go$
+        text: dot-imports
+      - path: (.+)\.go$
+        text: package-comments
+      - path: (.+)\.go$
+        text: unexported-return
+      - path: (.+)\.go$
+        text: indent-error-flow
+      - path: (.+)\.go$
+        text: 'exported: (type|func) name will be used as .* by other packages, and that stutters;'
+    paths:
+      - zz_generated\..*\.go$
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
