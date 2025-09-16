@@ -39,5 +39,6 @@ type BackendHTTP struct {
 // TLSConfig defines the TLS configuration for secure communication.
 type TLSConfig struct {
 	// SecretReferenceName is the name reference that leads to a Secret containing the TLS configuration.
+	// The secret should contain "client.crt", "client.key" (used for mTLS) and optionally "ca.crt" (used for verifying the server's certificate) keys.
 	SecretReferenceName string `json:"secretReferenceName"`
 }

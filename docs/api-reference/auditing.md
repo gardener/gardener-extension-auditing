@@ -142,7 +142,8 @@ string
 </em>
 </td>
 <td>
-<p>SecretReferenceName is the name reference that leads to a Secret containing the TLS configuration.</p>
+<p>SecretReferenceName is the name reference that leads to a Secret containing the TLS configuration.
+The secret should contain &ldquo;client.crt&rdquo;, &ldquo;client.key&rdquo; (used for mTLS) and optionally &ldquo;ca.crt&rdquo; (used for verifying the server&rsquo;s certificate) keys.</p>
 </td>
 </tr>
 </tbody>
