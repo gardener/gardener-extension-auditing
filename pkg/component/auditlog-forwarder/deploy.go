@@ -43,7 +43,7 @@ import (
 )
 
 const (
-	managedResourceName = "extension-auditing"
+	ManagedResourceName = "extension-auditing"
 )
 
 // ShootMetadata contains identifying information about a Gardener shoot cluster.
@@ -152,7 +152,7 @@ func (r *auditlogForwarder) Deploy(ctx context.Context) error {
 		return err
 	}
 
-	if err := managedresources.CreateForSeed(ctx, r.client, r.namespace, managedResourceName, false, data); err != nil {
+	if err := managedresources.CreateForSeed(ctx, r.client, r.namespace, ManagedResourceName, false, data); err != nil {
 		return fmt.Errorf("failed to create ManagedResource for Seed: %w", err)
 	}
 
@@ -160,7 +160,7 @@ func (r *auditlogForwarder) Deploy(ctx context.Context) error {
 }
 
 func (r *auditlogForwarder) Destroy(ctx context.Context) error {
-	return managedresources.Delete(ctx, r.client, r.namespace, managedResourceName, false)
+	return managedresources.Delete(ctx, r.client, r.namespace, ManagedResourceName, false)
 }
 
 // TimeoutWaitForManagedResource is the timeout used while waiting for the ManagedResources
@@ -171,7 +171,7 @@ func (r *auditlogForwarder) Wait(ctx context.Context) error {
 	timeoutCtx, cancel := context.WithTimeout(ctx, TimeoutWaitForManagedResource)
 	defer cancel()
 
-	if err := managedresources.WaitUntilHealthy(timeoutCtx, r.client, r.namespace, managedResourceName); err != nil {
+	if err := managedresources.WaitUntilHealthy(timeoutCtx, r.client, r.namespace, ManagedResourceName); err != nil {
 		return err
 	}
 
@@ -190,7 +190,7 @@ func (r *auditlogForwarder) WaitCleanup(ctx context.Context) error {
 	timeoutCtx, cancel := context.WithTimeout(ctx, TimeoutWaitForManagedResource)
 	defer cancel()
 
-	return managedresources.WaitUntilDeleted(timeoutCtx, r.client, r.namespace, managedResourceName)
+	return managedresources.WaitUntilDeleted(timeoutCtx, r.client, r.namespace, ManagedResourceName)
 }
 
 func (r *auditlogForwarder) computeResourcesData(generatedSecrets map[string]*corev1.Secret, caBundle *corev1.Secret) (map[string][]byte, error) {
