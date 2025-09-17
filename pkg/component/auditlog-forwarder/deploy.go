@@ -45,6 +45,7 @@ import (
 )
 
 const (
+	// ManagedResourceName is the name of the ManagedResource that is created in the seed/runtime cluster.
 	ManagedResourceName = "extension-auditing"
 )
 
