@@ -36,6 +36,7 @@ build:
             - pkg/component/auditlog-forwarder
             - pkg/constants
             - pkg/controller/audit
+            - pkg/controller/healthcheck
             - pkg/secrets
             - pkg/webhook/kapiserver
             - VERSION
