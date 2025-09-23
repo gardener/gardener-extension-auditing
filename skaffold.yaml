@@ -98,3 +98,47 @@ deploy:
               - bash
               - -ec
               - hack/cert-gen.sh
+---
+apiVersion: skaffold/v4beta12
+kind: Config
+metadata:
+  name: admission
+build:
+  artifacts:
+    - image: local-skaffold/gardener-extension-auditing-admission
+      ko:
+        dependencies:
+          paths:
+            - cmd/gardener-extension-auditing-admission
+            - cmd/gardener-extension-auditing-admission/app
+            - pkg/admission/cmd
+            - pkg/admission/validator/secret
+            - pkg/admission/validator/shoot
+            - pkg/apis/auditing
+            - pkg/apis/auditing/install
+            - pkg/apis/auditing/v1alpha1
+            - pkg/apis/auditing/validation
+            - pkg/constants
+            - VERSION
+        ldflags:
+          - '{{.LD_FLAGS}}'
+        main: ./cmd/gardener-extension-auditing-admission
+  insecureRegistries:
+    - garden.local.gardener.cloud:5001
+deploy:
+  helm:
+    releases:
+      - name: gardener-extension-auditing-admission-application
+        chartPath: charts/gardener-extension-auditing-admission/charts/application
+        namespace: garden
+        setValueTemplates:
+          gardener.virtualCluster.enabled: "false"
+        wait: true
+      - name: gardener-extension-auditing-admission-runtime
+        chartPath: charts/gardener-extension-auditing-admission/charts/runtime
+        namespace: garden
+        setValueTemplates:
+          gardener.virtualCluster.enabled: "false"
+          image.repository: '{{.IMAGE_REPO_local_skaffold_gardener_extension_auditing_admission}}'
+          image.tag: '{{.IMAGE_TAG_local_skaffold_gardener_extension_auditing_admission}}@{{.IMAGE_DIGEST_local_skaffold_gardener_extension_auditing_admission}}'
+        wait: true
