@@ -49,6 +49,7 @@ docker-login:
 .PHONY: docker-images
 docker-images:
 	@docker build --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) -t $(IMAGE):$(IMAGE_TAG) -f Dockerfile -m 6g --target $(NAME) .
+	@docker build --build-arg EFFECTIVE_VERSION=$(EFFECTIVE_VERSION) -t $(IMAGE)-admission:$(IMAGE_TAG) -f Dockerfile -m 6g --target $(ADMISSION_NAME) .
 
 #####################################################################
 # Rules for verification, formatting, linting, testing and cleaning #
