@@ -35,7 +35,7 @@ func NewSecretValidator(apiReader client.Reader, decoder runtime.Decoder) extens
 }
 
 // Validate validates the given secret object
-func (s *secret) Validate(ctx context.Context, newObj, oldObj client.Object) error {
+func (s *secret) Validate(ctx context.Context, newObj, _ client.Object) error {
 	secret, ok := newObj.(*corev1.Secret)
 	if !ok {
 		return fmt.Errorf("wrong object type %T", newObj)

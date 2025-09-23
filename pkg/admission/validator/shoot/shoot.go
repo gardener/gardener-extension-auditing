@@ -35,7 +35,7 @@ func NewShootValidator(apiReader client.Reader, decoder runtime.Decoder) extensi
 }
 
 // Validate validates the given shoot object
-func (s *shoot) Validate(ctx context.Context, newObj, oldObj client.Object) error {
+func (s *shoot) Validate(ctx context.Context, newObj, _ client.Object) error {
 	shoot, ok := newObj.(*gardencore.Shoot)
 	if !ok {
 		return fmt.Errorf("wrong object type %T", newObj)
