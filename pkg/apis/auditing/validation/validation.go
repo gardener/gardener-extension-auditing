@@ -15,11 +15,10 @@ import (
 	"net/url"
 	"strings"
 
+	corev1 "k8s.io/api/core/v1"
 	apivalidation "k8s.io/apimachinery/pkg/api/validation"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/validation/field"
-
-	corev1 "k8s.io/api/core/v1"
 
 	"github.com/gardener/gardener-extension-auditing/pkg/apis/auditing"
 )

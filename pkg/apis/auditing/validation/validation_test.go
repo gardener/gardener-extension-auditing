@@ -13,13 +13,14 @@ import (
 	"math/big"
 	"strings"
 
-	"github.com/gardener/gardener-extension-auditing/pkg/apis/auditing"
-	"github.com/gardener/gardener-extension-auditing/pkg/apis/auditing/validation"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/validation/field"
+
+	"github.com/gardener/gardener-extension-auditing/pkg/apis/auditing"
+	"github.com/gardener/gardener-extension-auditing/pkg/apis/auditing/validation"
 )
 
 var _ = Describe("ValidateAuditConfiguration", func() {
