@@ -29,7 +29,7 @@ kube-apiserver -> auditlog-forwarder -> External receiver(s)
 * Multiple backends (fan‑out) – each event is attempted to be delivered to all configured backends. (this function is currently limited to a single backend)
 * HTTPS delivery via mutual TLS.
 
-> ![NOTE]
+> [!NOTE]
 > Current API focuses on HTTP(S) backends. Future versions may add additional backend types (e.g. OTLP).
 
 ## Shoot Configuration
