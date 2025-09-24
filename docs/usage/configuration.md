@@ -71,7 +71,7 @@ spec:
             name: audit-policy
     # ... other configuration ...
 ---
-apiVersion: "v1"
+apiVersion: v1
 kind: Secret
 metadata:
   name: mtls-credentials
