@@ -4,9 +4,9 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/gardener/gardener-extension-auditing)](https://goreportcard.com/report/github.com/gardener/gardener-extension-auditing)
 [![REUSE status](https://api.reuse.software/badge/github.com/gardener/gardener-extension-auditing)](https://api.reuse.software/info/github.com/gardener/gardener-extension-auditing)
 
-Gardener extension controller which deploys an auditlog forwarder sending Audit Events to configured backends.
-
 ## Introduction
+
+Gardener extension controller which deploys an auditlog forwarder sending Audit Events to configured backends.
 
 ### Use Case
 
