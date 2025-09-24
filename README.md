@@ -13,3 +13,7 @@ Gardener extension controller which deploys an auditlog forwarder sending Audit 
 ## Local Setup and Development
 
 - [Deploying Auditing Extension Locally](docs/development/getting-started-locally.md) - learn how to set up a local development environment
+
+## Contributing
+
+Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to contribute to this project.
