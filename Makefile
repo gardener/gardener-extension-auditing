@@ -90,7 +90,7 @@ generate-in-docker:
 
 .PHONY: format
 format: $(GOIMPORTS) $(GOIMPORTSREVISER)
-	@bash $(GARDENER_HACK_DIR)/format.sh ./cmd ./pkg ./test
+	@bash $(GARDENER_HACK_DIR)/format.sh ./charts ./cmd ./pkg ./test
 
 .PHONY: sast
 sast: $(GOSEC)
