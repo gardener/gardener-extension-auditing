@@ -29,7 +29,7 @@ COPY --from=builder /go/bin/gardener-extension-auditing /gardener-extension-audi
 ENTRYPOINT ["/gardener-extension-auditing"]
 
 ############# gardener-extension-auditing-admission
-FROM base AS gardener-extension-auditing-admission
+FROM base AS auditing-admission
 WORKDIR /
 
 COPY --from=builder /go/bin/gardener-extension-auditing-admission /gardener-extension-auditing-admission
