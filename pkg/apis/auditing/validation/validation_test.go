@@ -11,10 +11,10 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"math/big"
-	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	. "github.com/onsi/gomega/gstruct"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -108,15 +108,29 @@ var _ = Describe("ValidateAuditConfiguration", func() {
 	It("should detect duplicate backend URLs", func() {
 		base.Backends = append(base.Backends, auditing.AuditBackend{HTTP: &auditing.BackendHTTP{URL: base.Backends[0].HTTP.URL, TLS: auditing.TLSConfig{SecretReferenceName: "audit-secret-2"}}})
 		errs := validation.ValidateAuditConfiguration(&base, field.NewPath("providerConfig"))
-		// one duplicate error expected
-		duplicate := false
-		for _, e := range errs {
-			if e.Type == field.ErrorTypeDuplicate {
-				duplicate = true
-				break
-			}
-		}
-		Expect(duplicate).To(BeTrue(), "expected duplicate error for backend URL")
+		Expect(errs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
+			"Type":  Equal(field.ErrorTypeDuplicate),
+			"Field": Equal("providerConfig.backends[1].http.url"),
+		}))))
+	})
+
+	It("should allow valid gzip compression", func() {
+		c := "gzip"
+		base.Backends[0].HTTP.Compression = &c
+		errs := validation.ValidateAuditConfiguration(&base, field.NewPath("providerConfig"))
+		Expect(errs).To(BeEmpty())
+	})
+
+	It("should reject unsupported compression", func() {
+		c := "brotli"
+		base.Backends[0].HTTP.Compression = &c
+		errs := validation.ValidateAuditConfiguration(&base, field.NewPath("providerConfig"))
+		Expect(errs).ToNot(BeEmpty())
+		Expect(errs).To(ConsistOf(PointTo(MatchFields(IgnoreExtras, Fields{
+			"Type":   Equal(field.ErrorTypeNotSupported),
+			"Field":  Equal("providerConfig.backends[0].http.compression"),
+			"Detail": Equal("supported values: \"gzip\""),
+		}))))
 	})
 })
 
@@ -182,15 +196,11 @@ var _ = Describe("ValidateBackendHTTPTLSSecret", func() {
 		Expect(err).NotTo(HaveOccurred())
 		secret.Data["client.key"] = pem.EncodeToMemory(&pem.Block{Type: "EC PRIVATE KEY", Bytes: otherKeyBytes})
 		errs := validation.ValidateBackendHTTPTLSSecret(secret, fldPath, "tls-secret")
-		Expect(errs).ToNot(BeEmpty())
-		found := false
-		for _, e := range errs {
-			if strings.Contains(e.Error(), "does not match") {
-				found = true
-				break
-			}
-		}
-		Expect(found).To(BeTrue())
+		Expect(errs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
+			"Type":   Equal(field.ErrorTypeInvalid),
+			"Field":  Equal("providerConfig.backends[0].http.tls.secretReferenceName"),
+			"Detail": ContainSubstring("client.key does not match"),
+		}))))
 	})
 
 	It("should error on invalid certificate PEM", func() {
