@@ -34,6 +34,9 @@ type BackendHTTP struct {
 	URL string `json:"url"`
 	// TLS contains the TLS configuration for secure communication with the HTTP backend.
 	TLS TLSConfig `json:"tls"`
+	// Compression defines the compression algorithm to use for the HTTP request body when forwarding
+	// audit events. If unset, no compression is applied. Currently only "gzip" is supported.
+	Compression *string `json:"compression,omitempty"`
 }
 
 // TLSConfig defines the TLS configuration for secure communication.

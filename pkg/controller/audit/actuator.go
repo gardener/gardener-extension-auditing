@@ -106,6 +106,7 @@ func (a *actuator) Reconcile(ctx context.Context, log logr.Logger, ex *extension
 			HTTP: &auditlogforwarder.OutputHTTP{
 				URL:           backend.HTTP.URL,
 				TLSSecretName: refSecretName,
+				Compression:   backend.HTTP.Compression,
 			},
 		})
 	}

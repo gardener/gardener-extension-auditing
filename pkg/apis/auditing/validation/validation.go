@@ -90,6 +90,14 @@ func validateBackendHTTP(httpCfg auditing.BackendHTTP, fldPath *field.Path) fiel
 		}
 	}
 
+	if compression := httpCfg.Compression; compression != nil {
+		if *compression == "" {
+			allErrs = append(allErrs, field.Invalid(fldPath.Child("compression"), *compression, "compression must not be empty when specified"))
+		} else if *compression != "gzip" { // currently only gzip supported by forwarder
+			allErrs = append(allErrs, field.NotSupported(fldPath.Child("compression"), *compression, []string{"gzip"}))
+		}
+	}
+
 	return allErrs
 }
 

@@ -111,6 +111,9 @@ type OutputHTTP struct {
 	// for client authentication when connecting to the HTTP endpoint.
 	// The secret should contain client.crt, client.key, and ca.crt files.
 	TLSSecretName string
+	// Compression defines the compression algorithm to use for the HTTP request body when forwarding
+	// audit events. If empty or unset, no compression is applied. Currently only "gzip" is supported.
+	Compression *string
 }
 
 // New creates a new instance of component.DeployWaiter for auditing services.
@@ -225,6 +228,9 @@ func (r *auditlogForwarder) computeResourcesData(generatedSecrets map[string]*co
 					CertFile: "/etc/auditlog-forwarder/outputs/http/" + http.TLSSecretName + "/" + "client.crt",
 					KeyFile:  "/etc/auditlog-forwarder/outputs/http/" + http.TLSSecretName + "/" + "client.key",
 				},
+			}
+			if http.Compression != nil && *http.Compression != "" {
+				httpOut.Compression = *http.Compression
 			}
 			forwarderConfiguration.Outputs = append(forwarderConfiguration.Outputs, forwarderconfigv1alpha1.Output{
 				HTTP: &httpOut,
