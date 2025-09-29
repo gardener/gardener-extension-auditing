@@ -115,6 +115,18 @@ TLSConfig
 <p>TLS contains the TLS configuration for secure communication with the HTTP backend.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>compression</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Compression defines the compression algorithm to use for the HTTP request body when forwarding
+audit events. If unset, no compression is applied. Currently only &ldquo;gzip&rdquo; is supported.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <h3 id="auditing.extensions.gardener.cloud/v1alpha1.TLSConfig">TLSConfig
