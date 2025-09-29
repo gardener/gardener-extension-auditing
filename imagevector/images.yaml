@@ -6,7 +6,6 @@
 images:
 - name: auditlog-forwarder
   sourceRepository: github.com/gardener/auditlog-forwarder
-  # repository: europe-docker.pkg.dev/gardener-project/releases/gardener/auditlog-forwarder
+  repository: europe-docker.pkg.dev/gardener-project/public/gardener/auditlog-forwarder
   # tag: v0.1.0
-  repository: europe-docker.pkg.dev/gardener-project/snapshots/gardener/auditlog-forwarder
   tag: v0.1.0-0cd5e94b6915cbc0f8a54cbc0382c3d47ac1f537
