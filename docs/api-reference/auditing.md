@@ -123,7 +123,8 @@ string
 </em>
 </td>
 <td>
-<p>Compression defines the compression algorithm to use for the HTTP request body when forwarding audit events. Currently only "gzip" is supported. If empty, no compression is applied.</p>
+<p>Compression defines the compression algorithm to use for the HTTP request body when forwarding
+audit events. If unset, no compression is applied. Currently only &ldquo;gzip&rdquo; is supported.</p>
 </td>
 </tr>
 </tbody>

@@ -112,6 +112,7 @@ func autoConvert_v1alpha1_BackendHTTP_To_auditing_BackendHTTP(in *BackendHTTP, o
 	if err := Convert_v1alpha1_TLSConfig_To_auditing_TLSConfig(&in.TLS, &out.TLS, s); err != nil {
 		return err
 	}
+	out.Compression = (*string)(unsafe.Pointer(in.Compression))
 	return nil
 }
 
@@ -125,6 +126,7 @@ func autoConvert_auditing_BackendHTTP_To_v1alpha1_BackendHTTP(in *auditing.Backe
 	if err := Convert_auditing_TLSConfig_To_v1alpha1_TLSConfig(&in.TLS, &out.TLS, s); err != nil {
 		return err
 	}
+	out.Compression = (*string)(unsafe.Pointer(in.Compression))
 	return nil
 }
 

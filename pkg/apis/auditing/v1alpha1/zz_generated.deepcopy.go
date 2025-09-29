@@ -19,7 +19,7 @@ func (in *AuditBackend) DeepCopyInto(out *AuditBackend) {
 	if in.HTTP != nil {
 		in, out := &in.HTTP, &out.HTTP
 		*out = new(BackendHTTP)
-		**out = **in
+		(*in).DeepCopyInto(*out)
 	}
 	return
 }
@@ -70,6 +70,11 @@ func (in *AuditConfiguration) DeepCopyObject() runtime.Object {
 func (in *BackendHTTP) DeepCopyInto(out *BackendHTTP) {
 	*out = *in
 	out.TLS = in.TLS
+	if in.Compression != nil {
+		in, out := &in.Compression, &out.Compression
+		*out = new(string)
+		**out = **in
+	}
 	return
 }
 
