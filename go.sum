@@ -160,8 +160,8 @@ github.com/fsnotify/fsnotify v1.9.0 h1:2Ml+OJNzbYCTzsxtv8vKSFD9PbJjmhYF14k/jKC7S
 github.com/fsnotify/fsnotify v1.9.0/go.mod h1:8jBTzvmWwFyi3Pb8djgCCO5IBqzKJ/Jwo8TRcHyHii0=
 github.com/fxamacker/cbor/v2 v2.9.0 h1:NpKPmjDBgUfBms6tr6JZkTHtfFGcMKsw3eGcmD/sapM=
 github.com/fxamacker/cbor/v2 v2.9.0/go.mod h1:vM4b+DJCtHn+zz7h3FFp/hDAI9WNWCsZj23V5ytsSxQ=
-github.com/gardener/auditlog-forwarder v0.0.0-20250924094731-0cd5e94b6915 h1:5EvIsSFl7/tKaelNtlYY/np2ky7Nyq7/pl26R3U1EXw=
-github.com/gardener/auditlog-forwarder v0.0.0-20250924094731-0cd5e94b6915/go.mod h1:wAEE/AB+Dkmu+MCsFsrc1TdKwktBXUrafD38LHddpsY=
+github.com/gardener/auditlog-forwarder v0.1.0 h1:lrsgA92OXVOhUEsXqCezcYR8SfGI+hF+15WaL2Tlohs=
+github.com/gardener/auditlog-forwarder v0.1.0/go.mod h1:QeICP4Gu6IOjHd0e3OlEq3Yp0wZN60w/SsnP0mHhU0w=
 github.com/gardener/cert-management v0.18.0 h1:s2YhkN8z7lXe9En52GCeqQ9be10uEbLtH/FFAh6BVgQ=
 github.com/gardener/cert-management v0.18.0/go.mod h1:9+JT+EBJB2OIX65EG+P1p/DZ/UJ3W8WR0h40ZjKbw+Q=
 github.com/gardener/etcd-druid/api v0.32.0 h1:B3MEBe9q3+Q0jjFb/BhMigde05mYkVjWzVHgFd0/WuA=
