@@ -13,7 +13,7 @@ The auditlog-forwarder receives these EventList batches from the kube-apiserver,
 
 An EventList is a JSON object with the following structure:
 
-```json
+```jsonc
 {
   "kind": "EventList",
   "apiVersion": "audit.k8s.io/v1",
@@ -27,7 +27,7 @@ An EventList is a JSON object with the following structure:
 
 An Event is a JSON object with the following structure:
 
-```json
+```jsonc
 {
   "kind": "Event",
   "apiVersion": "audit.k8s.io/v1",
@@ -60,7 +60,7 @@ These annotations enable you to:
 
 Below is a simplified example of an EventList containing a single audit event with Gardener annotations. In practice, an EventList may contain multiple events batched together:
 
-```json
+```jsonc
 {
   "kind": "EventList",
   "apiVersion": "audit.k8s.io/v1",
