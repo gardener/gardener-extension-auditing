@@ -59,8 +59,8 @@ data:
 
 For full list of options, please consult the [API reference](../api-reference/auditing.md).
 
+For details about the format of audit events sent to backends, see [Audit Event Format](event-format.md).
+
 ### Disabling the extension
 
 Remove the `auditing` entry from `spec.extensions`. The extension will clean up deployed resources. (Audit policy remains; you can also remove or adjust it separately.)
-
-

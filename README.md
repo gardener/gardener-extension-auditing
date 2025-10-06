@@ -36,6 +36,7 @@ kube-apiserver -> auditlog-forwarder -> external receiver(s)
 ## Usage
 
 - [Configuring the Auditing Extension](docs/usage/configuration.md) - learn how to enable and configure the auditing extension
+- [Audit Event Format](docs/usage/event-format.md) - understand the format of audit events and Gardener-specific annotations
 
 ## Local Setup and Development
 
