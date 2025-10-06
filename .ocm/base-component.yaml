@@ -1,4 +1,13 @@
 name: github.com/gardener/gardener-extension-auditing
+
+labels:
+  - name: cloud.gardener.cnudie/responsibles
+    value:
+    - type: githubUser
+      username: dimityrmirchev
+    - type: githubUser
+      username: vpnachev
+
 main-source:
   labels:
     - name: cloud.gardener.cnudie/dso/scanning-hints/source_analysis/v1
