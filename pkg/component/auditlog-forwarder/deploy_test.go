@@ -532,8 +532,8 @@ var _ = Describe("AuditlogForwarder", func() {
 					"kubeconfig": kubeAPIServerKubeConfig,
 				}
 
-				deployment.Spec.Template.Spec.Volumes[1].VolumeSource.Secret.SecretName = tlsSecret.Name
-				deployment.Spec.Template.Spec.Volumes[2].VolumeSource.Secret.SecretName = caBundle.Name
+				deployment.Spec.Template.Spec.Volumes[1].Secret.SecretName = tlsSecret.Name
+				deployment.Spec.Template.Spec.Volumes[2].Secret.SecretName = caBundle.Name
 				utilruntime.Must(references.InjectAnnotations(deployment))
 
 				expectedObjects = []client.Object{
