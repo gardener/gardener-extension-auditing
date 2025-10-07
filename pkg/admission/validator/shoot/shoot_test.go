@@ -14,6 +14,9 @@ import (
 	"encoding/pem"
 	"math/big"
 
+	gardencore "github.com/gardener/gardener/pkg/apis/core"
+	gardencoreinstall "github.com/gardener/gardener/pkg/apis/core/install"
+	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	autoscalingv1 "k8s.io/api/autoscaling/v1"
@@ -22,10 +25,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-
-	gardencore "github.com/gardener/gardener/pkg/apis/core"
-	gardencoreinstall "github.com/gardener/gardener/pkg/apis/core/install"
-	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 
 	validator "github.com/gardener/gardener-extension-auditing/pkg/admission/validator/shoot"
 	"github.com/gardener/gardener-extension-auditing/pkg/apis/auditing"
