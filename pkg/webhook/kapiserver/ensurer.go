@@ -50,8 +50,7 @@ const (
 	auditWebhookTruncateMaxEventSize  = "--audit-webhook-truncate-max-event-size="
 	auditWebhookTruncateMaxBatchSize  = "--audit-webhook-truncate-max-batch-size="
 
-	auditWebhookConfigVolumeName   = "audit-webhook-kubeconfig" // #nosec G101
-	auditWebhookCABundleVolumeName = "audit-webhook-ca-bundle"  // retained unused constant for backward compatibility (will be deprecated)
+	auditWebhookConfigVolumeName = "audit-webhook-kubeconfig" // #nosec G101
 )
 
 type ensurer struct {
