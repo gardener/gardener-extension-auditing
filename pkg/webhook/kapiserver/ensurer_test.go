@@ -19,6 +19,7 @@ import (
 	"github.com/gardener/gardener/pkg/client/kubernetes"
 	"github.com/gardener/gardener/pkg/extensions"
 	. "github.com/gardener/gardener/pkg/utils/test/matchers"
+	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"go.uber.org/mock/gomock"
@@ -47,10 +48,65 @@ var _ = Describe("Ensurer", func() {
 	)
 
 	var (
-		ctx        = context.Background()
 		ctrl       *gomock.Controller
 		fakeClient client.Client
-		logger     = log.Log.WithName("test")
+		logger     logr.Logger
+
+		ctx context.Context
+
+		auditWebhookConfigVolume      corev1.Volume
+		auditWebhookConfigVolumeMount corev1.VolumeMount
+
+		checkDeploymentIsCorrectlyMutated = func(deployment *appsv1.Deployment) {
+			// Check that the kube-apiserver container still exists and has correct configuration
+			var c *corev1.Container
+			for i := range deployment.Spec.Template.Spec.Containers {
+				if deployment.Spec.Template.Spec.Containers[i].Name == v1beta1constants.DeploymentNameKubeAPIServer {
+					c = &deployment.Spec.Template.Spec.Containers[i]
+					break
+				}
+			}
+			Expect(c).ToNot(BeNil())
+			Expect(c.Args).To(ContainElements(
+				auditWebhookConfigFileArg,
+				auditWebhookBatchMaxSizeArg,
+				auditWebhookBatchThrottleArg,
+				auditWebhookTruncateEnabledArg,
+				auditWebhookTruncateMaxEventArg,
+				auditWebhookTruncateMaxBatchArg,
+			))
+			Expect(c.VolumeMounts).To(ContainElement(auditWebhookConfigVolumeMount))
+			Expect(deployment.Spec.Template.Spec.Volumes).To(ContainElement(auditWebhookConfigVolume))
+		}
+
+		checkDeploymentIsNotMutated = func(deployment *appsv1.Deployment) {
+			var c *corev1.Container
+			for i := range deployment.Spec.Template.Spec.Containers {
+				if deployment.Spec.Template.Spec.Containers[i].Name == v1beta1constants.DeploymentNameKubeAPIServer {
+					c = &deployment.Spec.Template.Spec.Containers[i]
+					break
+				}
+			}
+			Expect(c).To(Not(BeNil()))
+
+			Expect(c.Args).ToNot(ContainElement(ContainSubstring("--audit-webhook-")))
+
+			for _, v := range c.VolumeMounts {
+				Expect(v.Name).NotTo(Equal("audit-webhook-kubeconfig"))
+			}
+
+			for _, v := range deployment.Spec.Template.Spec.Volumes {
+				Expect(v.Name).NotTo(Equal("audit-webhook-kubeconfig"))
+				if v.Secret != nil {
+					Expect(v.VolumeSource.Secret.SecretName).NotTo(Equal(constants.AuditWebhookKubeConfigSecretName))
+				}
+			}
+		}
+	)
+
+	BeforeEach(func() {
+		ctx = context.Background()
+		logger = log.Log.WithName("test")
 
 		auditWebhookConfigVolumeMount = corev1.VolumeMount{
 			Name:      "audit-webhook-kubeconfig",
@@ -67,54 +123,6 @@ var _ = Describe("Ensurer", func() {
 			},
 		}
 
-		checkDeploymentIsCorrectlyMutated = func(deployment *appsv1.Deployment) {
-			// Check that the kube-apiserver container still exists and has correct configuration
-			var c *corev1.Container
-			for i := range deployment.Spec.Template.Spec.Containers {
-				if deployment.Spec.Template.Spec.Containers[i].Name == v1beta1constants.DeploymentNameKubeAPIServer {
-					c = &deployment.Spec.Template.Spec.Containers[i]
-					break
-				}
-			}
-			Expect(c).To(Not(BeNil()))
-			Expect(c.Args).To(ContainElement(auditWebhookConfigFileArg))
-			Expect(c.Args).To(ContainElement(auditWebhookBatchMaxSizeArg))
-			Expect(c.Args).To(ContainElement(auditWebhookBatchThrottleArg))
-			Expect(c.Args).To(ContainElement(auditWebhookTruncateEnabledArg))
-			Expect(c.Args).To(ContainElement(auditWebhookTruncateMaxEventArg))
-			Expect(c.Args).To(ContainElement(auditWebhookTruncateMaxBatchArg))
-			Expect(c.VolumeMounts).To(ContainElement(auditWebhookConfigVolumeMount))
-			Expect(deployment.Spec.Template.Spec.Volumes).To(ContainElement(auditWebhookConfigVolume))
-		}
-
-		checkDeploymentIsNotMutated = func(deployment *appsv1.Deployment) {
-			var c *corev1.Container
-			for i := range deployment.Spec.Template.Spec.Containers {
-				if deployment.Spec.Template.Spec.Containers[i].Name == v1beta1constants.DeploymentNameKubeAPIServer {
-					c = &deployment.Spec.Template.Spec.Containers[i]
-					break
-				}
-			}
-			Expect(c).To(Not(BeNil()))
-
-			for _, v := range c.Args {
-				Expect(strings.HasPrefix(v, "--audit-webhook-")).To(BeFalse())
-			}
-
-			for _, v := range c.VolumeMounts {
-				Expect(v.Name).NotTo(Equal("audit-webhook-kubeconfig"))
-			}
-
-			for _, v := range deployment.Spec.Template.Spec.Volumes {
-				Expect(v.Name).NotTo(Equal("audit-webhook-kubeconfig"))
-				if v.Secret != nil {
-					Expect(v.VolumeSource.Secret.SecretName).NotTo(Equal(constants.AuditWebhookKubeConfigSecretName))
-				}
-			}
-		}
-	)
-
-	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
 		fakeClient = fakeclient.NewClientBuilder().WithScheme(kubernetes.SeedScheme).Build()
 	})
@@ -256,8 +264,7 @@ var _ = Describe("Ensurer", func() {
 			}
 			gctx.cluster = cluster
 
-			err := ensurer.EnsureKubeAPIServerDeployment(ctx, gctx, deployment, nil)
-			Expect(err).To(HaveOccurred())
+			Expect(ensurer.EnsureKubeAPIServerDeployment(ctx, gctx, deployment, nil)).ToNot(Succeed())
 			checkDeploymentIsNotMutated(deployment)
 		})
 
