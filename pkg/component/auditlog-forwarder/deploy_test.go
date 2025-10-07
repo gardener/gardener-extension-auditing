@@ -44,12 +44,13 @@ import (
 )
 
 var _ = Describe("AuditlogForwarder", func() {
-	var (
-		ctx context.Context
-
+	const (
 		managedResourceName = "extension-auditing"
 		namespace           = "some-namespace"
-		image               = "europe-docker.pkg.dev/gardener-project/releases/gardener/auditlog-forwarder:v1.0.0"
+		image               = "dummy-example:v99.99.99"
+	)
+	var (
+		ctx context.Context
 
 		fakeClient        client.Client
 		fakeSecretManager secretsmanager.Interface
@@ -62,14 +63,14 @@ var _ = Describe("AuditlogForwarder", func() {
 		managedResource       *resourcesv1alpha1.ManagedResource
 		managedResourceSecret *corev1.Secret
 
-		deployment          *appsv1.Deployment
-		service             *corev1.Service
-		podDisruptionBudget *policyv1.PodDisruptionBudget
-		vpa                 *vpaautoscalingv1.VerticalPodAutoscaler
-		serviceAccount      *corev1.ServiceAccount
-		configMap           *corev1.ConfigMap
-		kubeconfigSecret    *corev1.Secret
-		httpOutputSecret    *corev1.Secret
+		expectedDeployment          *appsv1.Deployment
+		expectedService             *corev1.Service
+		expectedPodDisruptionBudget *policyv1.PodDisruptionBudget
+		expectedVPA                 *vpaautoscalingv1.VerticalPodAutoscaler
+		expectedServiceAccount      *corev1.ServiceAccount
+		expectedConfigMap           *corev1.ConfigMap
+		expectedKubeconfigSecret    *corev1.Secret
+		expectedHTTPOutputSecret    *corev1.Secret
 
 		shootMetadata auditlogforwarder.ShootMetadata
 		seedMetadata  auditlogforwarder.SeedMetadata
@@ -145,12 +146,12 @@ var _ = Describe("AuditlogForwarder", func() {
 		}
 
 		scheme := runtime.NewScheme()
-		utilruntime.Must(forwarderconfigv1alpha1.AddToScheme(scheme))
+		Expect(forwarderconfigv1alpha1.AddToScheme(scheme)).To(Succeed())
 		yamlSerializer := json.NewSerializerWithOptions(json.DefaultMetaFactory, scheme, scheme, json.SerializerOptions{Yaml: true})
 		configData, err := runtime.Encode(yamlSerializer, &forwarderConfiguration)
 		Expect(err).NotTo(HaveOccurred())
 
-		configMap = &corev1.ConfigMap{
+		expectedConfigMap = &corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "auditlog-forwarder-config",
 				Namespace: namespace,
@@ -163,9 +164,9 @@ var _ = Describe("AuditlogForwarder", func() {
 				"config.yaml": string(configData),
 			},
 		}
-		utilruntime.Must(kubernetesutils.MakeUnique(configMap))
+		Expect(kubernetesutils.MakeUnique(expectedConfigMap)).To(Succeed())
 
-		deployment = &appsv1.Deployment{
+		expectedDeployment = &appsv1.Deployment{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "auditlog-forwarder",
 				Namespace: namespace,
@@ -265,7 +266,7 @@ var _ = Describe("AuditlogForwarder", func() {
 								VolumeSource: corev1.VolumeSource{
 									ConfigMap: &corev1.ConfigMapVolumeSource{
 										LocalObjectReference: corev1.LocalObjectReference{
-											Name: configMap.Name,
+											Name: expectedConfigMap.Name,
 										},
 									},
 								},
@@ -315,9 +316,9 @@ var _ = Describe("AuditlogForwarder", func() {
 				},
 			},
 		}
-		utilruntime.Must(references.InjectAnnotations(deployment))
+		Expect(references.InjectAnnotations(expectedDeployment)).To(Succeed())
 
-		service = &corev1.Service{
+		expectedService = &corev1.Service{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "auditlog-forwarder",
 				Namespace: namespace,
@@ -344,7 +345,7 @@ var _ = Describe("AuditlogForwarder", func() {
 			},
 		}
 
-		podDisruptionBudget = &policyv1.PodDisruptionBudget{
+		expectedPodDisruptionBudget = &policyv1.PodDisruptionBudget{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "auditlog-forwarder",
 				Namespace: namespace,
@@ -364,7 +365,7 @@ var _ = Describe("AuditlogForwarder", func() {
 			},
 		}
 
-		vpa = &vpaautoscalingv1.VerticalPodAutoscaler{
+		expectedVPA = &vpaautoscalingv1.VerticalPodAutoscaler{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "auditlog-forwarder",
 				Namespace: namespace,
@@ -391,7 +392,7 @@ var _ = Describe("AuditlogForwarder", func() {
 			},
 		}
 
-		serviceAccount = &corev1.ServiceAccount{
+		expectedServiceAccount = &corev1.ServiceAccount{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "auditlog-forwarder",
 				Namespace: namespace,
@@ -403,7 +404,7 @@ var _ = Describe("AuditlogForwarder", func() {
 		}
 
 		// Kubeconfig will be generated later after Deploy() creates the actual secrets
-		kubeconfigSecret = &corev1.Secret{
+		expectedKubeconfigSecret = &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "auditlog-forwarder-webhook-kubeconfig",
 				Namespace: namespace,
@@ -414,7 +415,7 @@ var _ = Describe("AuditlogForwarder", func() {
 			},
 		}
 
-		httpOutputSecret = &corev1.Secret{
+		expectedHTTPOutputSecret = &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "audit-backend-tls",
 				Namespace: namespace,
@@ -443,7 +444,7 @@ var _ = Describe("AuditlogForwarder", func() {
 		}
 		deployer = auditlogforwarder.New(fakeClient, fakeClient, namespace, fakeSecretManager, values)
 
-		Expect(fakeClient.Create(ctx, httpOutputSecret)).To(Succeed())
+		Expect(fakeClient.Create(ctx, expectedHTTPOutputSecret)).To(Succeed())
 	})
 
 	Describe("#Deploy", func() {
@@ -527,27 +528,28 @@ var _ = Describe("AuditlogForwarder", func() {
 				}
 				kubeAPIServerKubeConfig, err := runtime.Encode(clientcmdlatest.Codec, kubeConfig)
 				Expect(err).NotTo(HaveOccurred())
-				kubeconfigSecret.Data = map[string][]byte{
+				expectedKubeconfigSecret.Data = map[string][]byte{
 					"kubeconfig": kubeAPIServerKubeConfig,
 				}
 
-				deployment.Spec.Template.Spec.Volumes[1].Secret.SecretName = tlsSecret.Name
-				deployment.Spec.Template.Spec.Volumes[2].Secret.SecretName = caBundle.Name
-				utilruntime.Must(references.InjectAnnotations(deployment))
+				expectedDeployment.Spec.Template.Spec.Volumes[1].Secret.SecretName = tlsSecret.Name
+				expectedDeployment.Spec.Template.Spec.Volumes[2].Secret.SecretName = caBundle.Name
+				Expect(references.InjectAnnotations(expectedDeployment)).To(Succeed())
 
 				expectedObjects = []client.Object{
-					vpa,
-					serviceAccount,
-					podDisruptionBudget,
-					kubeconfigSecret,
-					service,
-					configMap,
-					deployment,
+					expectedVPA,
+					expectedServiceAccount,
+					expectedPodDisruptionBudget,
+					expectedKubeconfigSecret,
+					expectedService,
+					expectedConfigMap,
+					expectedDeployment,
 				}
 
 				Expect(managedResourceSecret.Type).To(Equal(corev1.SecretTypeOpaque))
+				Expect(managedResourceSecret.Immutable).To(Not(BeNil()))
 				Expect(managedResourceSecret.Immutable).To(Equal(ptr.To(true)))
-				Expect(managedResourceSecret.Labels["resources.gardener.cloud/garbage-collectable-reference"]).To(Equal("true"))
+				Expect(managedResourceSecret.Labels).To(HaveKeyWithValue("resources.gardener.cloud/garbage-collectable-reference", "true"))
 			})
 
 			It("should successfully deploy all resources", func() {
