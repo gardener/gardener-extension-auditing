@@ -8,12 +8,11 @@ import (
 	"testing"
 	"time"
 
+	secretsutils "github.com/gardener/gardener/pkg/utils/secrets"
+	"github.com/gardener/gardener/pkg/utils/test"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	testclock "k8s.io/utils/clock/testing"
-
-	secretsutils "github.com/gardener/gardener/pkg/utils/secrets"
-	"github.com/gardener/gardener/pkg/utils/test"
 )
 
 func TestAuditlogForwarder(t *testing.T) {
