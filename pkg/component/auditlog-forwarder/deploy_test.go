@@ -32,7 +32,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	vpaautoscalingv1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 	clientcmdlatest "k8s.io/client-go/tools/clientcmd/api/latest"
 	clientcmdv1 "k8s.io/client-go/tools/clientcmd/api/v1"
@@ -486,7 +485,7 @@ var _ = Describe("AuditlogForwarder", func() {
 					},
 					Status: healthyManagedResourceStatus,
 				}
-				utilruntime.Must(references.InjectAnnotations(expectedMr))
+				Expect(references.InjectAnnotations(expectedMr)).To(Succeed())
 				Expect(managedResource).To(DeepEqual(expectedMr))
 
 				managedResourceSecret.Name = managedResource.Spec.SecretRefs[0].Name
@@ -548,7 +547,7 @@ var _ = Describe("AuditlogForwarder", func() {
 
 				Expect(managedResourceSecret.Type).To(Equal(corev1.SecretTypeOpaque))
 				Expect(managedResourceSecret.Immutable).To(Not(BeNil()))
-				Expect(managedResourceSecret.Immutable).To(Equal(ptr.To(true)))
+				Expect(*managedResourceSecret.Immutable).To(BeTrue())
 				Expect(managedResourceSecret.Labels).To(HaveKeyWithValue("resources.gardener.cloud/garbage-collectable-reference", "true"))
 			})
 
