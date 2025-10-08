@@ -333,7 +333,7 @@ var _ = Describe("Ensurer", func() {
 
 			err := ensurer.EnsureKubeAPIServerDeployment(ctx, gctx, deployment, nil)
 			Expect(err).To(BeNotFoundError())
-			Expect(err).To(ContainSubstring("auditlog-forwarder-webhook-kubeconfig"))
+			Expect(err).To(MatchError(ContainSubstring("auditlog-forwarder-webhook-kubeconfig")))
 		})
 
 		It("should preserve audit-policy-file flag when mutating", func() {
