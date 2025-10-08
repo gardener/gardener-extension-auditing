@@ -166,7 +166,7 @@ func (r *auditlogForwarder) Deploy(ctx context.Context) error {
 }
 
 func (r *auditlogForwarder) Destroy(ctx context.Context) error {
-	return managedresources.Delete(ctx, r.client, r.namespace, ManagedResourceName, false)
+	return managedresources.DeleteForSeed(ctx, r.client, r.namespace, ManagedResourceName)
 }
 
 // TimeoutWaitForManagedResource is the timeout used while waiting for the ManagedResources
