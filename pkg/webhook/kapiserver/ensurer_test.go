@@ -416,7 +416,7 @@ type mockGardenContext struct {
 	cluster *extensions.Cluster
 }
 
-func (m *mockGardenContext) GetCluster(ctx context.Context) (*extensions.Cluster, error) {
+func (m *mockGardenContext) GetCluster(_ context.Context) (*extensions.Cluster, error) {
 	if m.cluster == nil {
 		return nil, fmt.Errorf("cluster not found")
 	}
