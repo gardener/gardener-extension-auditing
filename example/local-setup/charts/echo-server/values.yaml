@@ -13,15 +13,6 @@ certificates:
       -----BEGIN CERTIFICATE-----
       MIID...
       -----END CERTIFICATE-----
-  client:
-    crt: |
-      -----BEGIN CERTIFICATE-----
-      MIID...
-      -----END CERTIFICATE-----
-    key: |
-      -----BEGIN PRIVATE KEY-----
-      MIIE...
-      -----END PRIVATE KEY-----
 
 image:
   repository: local-skaffold/echo-server
