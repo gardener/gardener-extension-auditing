@@ -21,4 +21,9 @@ spec:
           ref: europe-docker.pkg.dev/gardener-project/public/charts/gardener/extensions/auditing:v0.1.0-dev
   resources:
   - kind: Extension
+    lifecycle:
+      delete: AfterKubeAPIServer
+      migrate: AfterKubeAPIServer
+      reconcile: BeforeKubeAPIServer
     type: auditing
+    workerlessSupported: true

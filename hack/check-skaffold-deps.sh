@@ -18,9 +18,12 @@ function run() {
   fi
 }
 
-run "skaffold.yaml" "gardener-extension-auditing"           "extension"
-run "skaffold.yaml" "gardener-extension-auditing-admission" "admission"
-run "skaffold.yaml" "echo-server"                           "extension"
+run "skaffold.yaml" "gardener-extension-auditing"                    "extension"
+run "skaffold.yaml" "gardener-extension-auditing-admission"          "admission"
+run "skaffold.yaml" "echo-server"                                    "extension"
+run "skaffold-operator.yaml" "echo-server"                           "operator"
+run "skaffold-operator.yaml" "gardener-extension-auditing"           "operator"
+run "skaffold-operator.yaml" "gardener-extension-auditing-admission" "operator"
 
 if ! $success ; then
   exit 1
