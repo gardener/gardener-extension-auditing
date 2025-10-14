@@ -69,8 +69,6 @@ func (e *ensurer) EnsureKubeAPIServerDeployment(ctx context.Context, gctx extens
 	ps := &template.Spec
 
 	if c := extensionswebhook.ContainerWithName(ps.Containers, v1beta1constants.DeploymentNameKubeAPIServer); c != nil {
-		// TODO: this secret should probably be unique or the kube-apiserver should be annotated with a hashsum
-		// if it gets updated existing kube-apiserver pods would not automatically pick up the changes
 		secret := &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: constants.AuditWebhookKubeConfigSecretName, Namespace: newDeployment.Namespace}}
 		if err := e.client.Get(ctx, client.ObjectKeyFromObject(secret), secret); err != nil {
 			// if secret is not found then probably one of the following is true
