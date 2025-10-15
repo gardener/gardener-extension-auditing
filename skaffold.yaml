@@ -29,6 +29,7 @@ build:
             - pkg/apis/auditing
             - pkg/apis/auditing/install
             - pkg/apis/auditing/v1alpha1
+            - pkg/apis/auditing/validation
             - pkg/apis/config
             - pkg/apis/config/v1alpha1
             - pkg/apis/config/validation
