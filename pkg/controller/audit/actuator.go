@@ -22,11 +22,13 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/utils/clock"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/gardener/gardener-extension-auditing/imagevector"
 	"github.com/gardener/gardener-extension-auditing/pkg/apis/auditing"
+	auditingvalidation "github.com/gardener/gardener-extension-auditing/pkg/apis/auditing/validation"
 	"github.com/gardener/gardener-extension-auditing/pkg/apis/config"
 	auditlogforwarder "github.com/gardener/gardener-extension-auditing/pkg/component/auditlog-forwarder"
 	"github.com/gardener/gardener-extension-auditing/pkg/secrets"
@@ -70,7 +72,9 @@ func (a *actuator) Reconcile(ctx context.Context, log logr.Logger, ex *extension
 		return fmt.Errorf("failed to decode providerConfig: %w", err)
 	}
 
-	// TODO check if the config is valid
+	if errs := auditingvalidation.ValidateAuditConfiguration(auditConfig, field.NewPath("providerConfig")); len(errs) > 0 {
+		return fmt.Errorf("invalid audit configuration: %w", errs.ToAggregate())
+	}
 
 	configs := secrets.ConfigsFor(namespace)
 	secretsManager, err := extensionssecretsmanager.SecretsManagerForCluster(ctx, log.WithName("secretsmanager"), clock.RealClock{}, a.client, cluster, secrets.ManagerIdentity, configs)
