@@ -8,3 +8,8 @@ spec:
   resources:
   - kind: Extension
     type: auditing
+    workerlessSupported: true
+    lifecycle:
+      reconcile: BeforeKubeAPIServer
+      delete: AfterKubeAPIServer
+      migrate: AfterKubeAPIServer

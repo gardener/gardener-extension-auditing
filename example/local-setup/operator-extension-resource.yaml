@@ -1,0 +1,29 @@
+apiVersion: operator.gardener.cloud/v1alpha1
+kind: Extension
+metadata:
+  name: extension-auditing
+  annotations:
+    security.gardener.cloud/pod-security-enforce: baseline
+spec:
+  resources:
+  - kind: Extension
+    type: auditing
+    workerlessSupported: true
+    lifecycle:
+      reconcile: BeforeKubeAPIServer
+      delete: AfterKubeAPIServer
+      migrate: AfterKubeAPIServer
+  deployment:
+    extension:
+      helm:
+        ociRepository:
+          ref: local-skaffold/gardener-extension-auditing/charts/extension
+    admission:
+      runtimeCluster:
+        helm:
+          ociRepository:
+            ref: local-skaffold/gardener-extension-auditing-admission/charts/runtime
+      virtualCluster:
+        helm:
+          ociRepository:
+            ref: local-skaffold/gardener-extension-auditing-admission/charts/application
