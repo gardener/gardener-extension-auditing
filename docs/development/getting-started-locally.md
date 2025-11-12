@@ -56,7 +56,6 @@ kubectl apply -f example/local-setup/shoot.yaml
 kubectl apply -f example/local-setup/netpol.yaml
 ```
 
-
 ## Setup with Gardener Operator
 
 Alternatively, you can deploy the auditing extension in the `gardener-operator` local setup. To do this, make sure you are have a running local setup based on [Alternative Way to Set Up Garden and Seed Leveraging `gardener-operator`](https://github.com/gardener/gardener/blob/master/docs/deployment/getting_started_locally.md#alternative-way-to-set-up-garden-and-seed-leveraging-gardener-operator). The `KUBECONFIG` environment variable should target the operator local KinD cluster (i.e. `<path_to_gardener_project>/example/gardener-local/kind/multi-zone/kubeconfig`).
@@ -107,10 +106,16 @@ kubectl apply -f example/local-setup/shoot.yaml
 5. Once the Shoot namespace is created in the seed cluster create a NetworkPolicy which will allow traffic from the auditlog forwarder to the echo server.
 [`example/local-setup/netpol.yaml`](../../example/local-setup/netpol.yaml) contains a NetworkPolicy allowing communication between the auditlog forwarder and the echo server:
 ```bash
-kubectl apply -f example/local-setup/netpol.yaml
+kubectl --kubeconfig $(pwd)/../gardener/example/gardener-local/kind/multi-zone/kubeconfig apply -f example/local-setup/netpol.yaml
 ```
 
 ### Delete the auditing `Extension.operator.gardener.cloud` resource
+
+Delete any shoots using the extension.
+```bash
+kubectl -n garden-local annotate shoot local confirmation.gardener.cloud/deletion=true
+kubectl -n garden-local delete shoot local
+```
 
 Make sure the environment variable `KUBECONFIG` points to the operator's local KinD cluster and then run:
 ```bash
