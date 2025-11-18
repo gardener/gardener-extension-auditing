@@ -106,11 +106,13 @@ func (a *actuator) Reconcile(ctx context.Context, log logr.Logger, ex *extension
 
 		// TODO validate secret data
 
+		_, refSecretContainsCABundle := refSecret.Data["ca.crt"]
 		outputs = append(outputs, auditlogforwarder.Output{
 			HTTP: &auditlogforwarder.OutputHTTP{
-				URL:           backend.HTTP.URL,
-				TLSSecretName: refSecretName,
-				Compression:   backend.HTTP.Compression,
+				URL:                       backend.HTTP.URL,
+				TLSSecretName:             refSecretName,
+				TLSSecretContainsCABundle: refSecretContainsCABundle,
+				Compression:               backend.HTTP.Compression,
 			},
 		})
 	}
