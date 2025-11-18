@@ -109,8 +109,13 @@ type OutputHTTP struct {
 	URL string
 	// TLSSecretName is the name of the Kubernetes Secret containing TLS certificates
 	// for client authentication when connecting to the HTTP endpoint.
-	// The secret should contain client.crt, client.key, and ca.crt files.
+	// The secret should contain client.crt, client.key, and optionally ca.crt files.
 	TLSSecretName string
+	// TLSSecretContainsCABundle indicates whether the TLS secret contains a ca.crt file
+	// that should be used to verify the server certificate of the HTTP endpoint.
+	// When true, the ca.crt file from the secret will be mounted and used for server verification.
+	// When false, system default CA certificates will be used for server verification.
+	TLSSecretContainsCABundle bool
 	// Compression defines the compression algorithm to use for the HTTP request body when forwarding
 	// audit events. If empty or unset, no compression is applied. Currently only "gzip" is supported.
 	Compression *string
@@ -123,8 +128,8 @@ func New(
 	namespace string,
 	secretsManager secretsmanager.Interface,
 	values Values,
-) component.DeployWaiter {
-	return &auditlogForwarder{
+) *AuditlogForwarder {
+	return &AuditlogForwarder{
 		client:         client,
 		reader:         reader,
 		namespace:      namespace,
@@ -133,7 +138,11 @@ func New(
 	}
 }
 
-type auditlogForwarder struct {
+var _ component.DeployWaiter = (*AuditlogForwarder)(nil)
+
+// AuditlogForwarder implements component.DeployWaiter to manage the deployment
+// of the auditlog-forwarder in the seed/runtime cluster.
+type AuditlogForwarder struct {
 	client         client.Client
 	reader         client.Reader
 	namespace      string
@@ -141,7 +150,9 @@ type auditlogForwarder struct {
 	values         Values
 }
 
-func (r *auditlogForwarder) Deploy(ctx context.Context) error {
+// Deploy creates or updates the ManagedResource in the seed/runtime cluster
+// to deploy the auditlog-forwarder with the specified configuration.
+func (r *AuditlogForwarder) Deploy(ctx context.Context) error {
 	configs := secrets.ConfigsFor(r.namespace)
 	generatedSecrets, err := extensionssecretsmanager.GenerateAllSecrets(ctx, r.secretsManager, configs)
 	if err != nil {
@@ -165,7 +176,9 @@ func (r *auditlogForwarder) Deploy(ctx context.Context) error {
 	return nil
 }
 
-func (r *auditlogForwarder) Destroy(ctx context.Context) error {
+// Destroy removes the ManagedResource in the seed/runtime cluster
+// that deploys the auditlog-forwarder.
+func (r *AuditlogForwarder) Destroy(ctx context.Context) error {
 	return managedresources.DeleteForSeed(ctx, r.client, r.namespace, ManagedResourceName)
 }
 
@@ -173,7 +186,9 @@ func (r *auditlogForwarder) Destroy(ctx context.Context) error {
 // to become healthy or deleted.
 var TimeoutWaitForManagedResource = 2 * time.Minute
 
-func (r *auditlogForwarder) Wait(ctx context.Context) error {
+// Wait waits until the ManagedResource in the seed/runtime cluster
+// that deploys the auditlog-forwarder becomes healthy.
+func (r *AuditlogForwarder) Wait(ctx context.Context) error {
 	timeoutCtx, cancel := context.WithTimeout(ctx, TimeoutWaitForManagedResource)
 	defer cancel()
 
@@ -192,14 +207,16 @@ func (r *auditlogForwarder) Wait(ctx context.Context) error {
 	}))
 }
 
-func (r *auditlogForwarder) WaitCleanup(ctx context.Context) error {
+// WaitCleanup waits until the ManagedResource in the seed/runtime cluster
+// that deploys the auditlog-forwarder is deleted.
+func (r *AuditlogForwarder) WaitCleanup(ctx context.Context) error {
 	timeoutCtx, cancel := context.WithTimeout(ctx, TimeoutWaitForManagedResource)
 	defer cancel()
 
 	return managedresources.WaitUntilDeleted(timeoutCtx, r.client, r.namespace, ManagedResourceName)
 }
 
-func (r *auditlogForwarder) computeResourcesData(generatedSecrets map[string]*corev1.Secret, caBundle *corev1.Secret) (map[string][]byte, error) {
+func (r *AuditlogForwarder) computeResourcesData(generatedSecrets map[string]*corev1.Secret, caBundle *corev1.Secret) (map[string][]byte, error) {
 	forwarderConfiguration := forwarderconfigv1alpha1.AuditlogForwarder{
 		Server: forwarderconfigv1alpha1.Server{
 			Port: 10443,
@@ -224,10 +241,12 @@ func (r *auditlogForwarder) computeResourcesData(generatedSecrets map[string]*co
 			httpOut := forwarderconfigv1alpha1.OutputHTTP{
 				URL: http.URL,
 				TLS: &forwarderconfigv1alpha1.ClientTLS{
-					CAFile:   "/etc/auditlog-forwarder/outputs/http/" + http.TLSSecretName + "/" + "ca.crt",
 					CertFile: "/etc/auditlog-forwarder/outputs/http/" + http.TLSSecretName + "/" + "client.crt",
 					KeyFile:  "/etc/auditlog-forwarder/outputs/http/" + http.TLSSecretName + "/" + "client.key",
 				},
+			}
+			if http.TLSSecretContainsCABundle {
+				httpOut.TLS.CAFile = "/etc/auditlog-forwarder/outputs/http/" + http.TLSSecretName + "/" + "ca.crt"
 			}
 			if http.Compression != nil && *http.Compression != "" {
 				httpOut.Compression = *http.Compression
@@ -399,12 +418,30 @@ func (r *auditlogForwarder) computeResourcesData(generatedSecrets map[string]*co
 						// Add volumes for each HTTP output TLS secret
 						for _, output := range r.values.AuditOutputs {
 							if http := output.HTTP; http != nil && http.TLSSecretName != "" {
+								secretVolumeSource := &corev1.SecretVolumeSource{
+									SecretName: http.TLSSecretName,
+									Items: []corev1.KeyToPath{
+										{
+											Key:  "client.crt",
+											Path: "client.crt",
+										},
+										{
+											Key:  "client.key",
+											Path: "client.key",
+										},
+									},
+								}
+								if http.TLSSecretContainsCABundle {
+									secretVolumeSource.Items = append(secretVolumeSource.Items, corev1.KeyToPath{
+										Key:  "ca.crt",
+										Path: "ca.crt",
+									})
+								}
+
 								volumes = append(volumes, corev1.Volume{
 									Name: "http-output-" + http.TLSSecretName,
 									VolumeSource: corev1.VolumeSource{
-										Secret: &corev1.SecretVolumeSource{
-											SecretName: http.TLSSecretName,
-										},
+										Secret: secretVolumeSource,
 									},
 								})
 							}

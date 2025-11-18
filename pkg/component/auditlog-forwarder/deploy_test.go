@@ -7,12 +7,12 @@ package auditlogforwarder_test
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	forwarderconfigv1alpha1 "github.com/gardener/auditlog-forwarder/pkg/apis/config/v1alpha1"
 	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	resourcesv1alpha1 "github.com/gardener/gardener/pkg/apis/resources/v1alpha1"
 	"github.com/gardener/gardener/pkg/client/kubernetes"
-	"github.com/gardener/gardener/pkg/component"
 	"github.com/gardener/gardener/pkg/resourcemanager/controller/garbagecollector/references"
 	kubernetesutils "github.com/gardener/gardener/pkg/utils/kubernetes"
 	"github.com/gardener/gardener/pkg/utils/retry"
@@ -53,7 +53,7 @@ var _ = Describe("AuditlogForwarder", func() {
 
 		fakeClient        client.Client
 		fakeSecretManager secretsmanager.Interface
-		deployer          component.DeployWaiter
+		deployer          *auditlogforwarder.AuditlogForwarder
 		values            auditlogforwarder.Values
 
 		fakeOps   *retryfake.Ops
@@ -70,6 +70,8 @@ var _ = Describe("AuditlogForwarder", func() {
 		expectedConfigMap           *corev1.ConfigMap
 		expectedKubeconfigSecret    *corev1.Secret
 		expectedHTTPOutputSecret    *corev1.Secret
+
+		includeCABundle bool
 
 		shootMetadata auditlogforwarder.ShootMetadata
 		seedMetadata  auditlogforwarder.SeedMetadata
@@ -111,6 +113,7 @@ var _ = Describe("AuditlogForwarder", func() {
 			ID:   "seed-id-456",
 			Name: "test-seed",
 		}
+		includeCABundle = false
 	})
 
 	JustBeforeEach(func() {
@@ -135,13 +138,16 @@ var _ = Describe("AuditlogForwarder", func() {
 					HTTP: &forwarderconfigv1alpha1.OutputHTTP{
 						URL: "https://audit-backend.example.com/events",
 						TLS: &forwarderconfigv1alpha1.ClientTLS{
-							CAFile:   "/etc/auditlog-forwarder/outputs/http/audit-backend-tls/ca.crt",
 							CertFile: "/etc/auditlog-forwarder/outputs/http/audit-backend-tls/client.crt",
 							KeyFile:  "/etc/auditlog-forwarder/outputs/http/audit-backend-tls/client.key",
 						},
 					},
 				},
 			},
+		}
+
+		if includeCABundle {
+			forwarderConfiguration.Outputs[0].HTTP.TLS.CAFile = "/etc/auditlog-forwarder/outputs/http/audit-backend-tls/ca.crt"
 		}
 
 		scheme := runtime.NewScheme()
@@ -307,6 +313,16 @@ var _ = Describe("AuditlogForwarder", func() {
 								VolumeSource: corev1.VolumeSource{
 									Secret: &corev1.SecretVolumeSource{
 										SecretName: "audit-backend-tls",
+										Items: []corev1.KeyToPath{
+											{
+												Key:  "client.crt",
+												Path: "client.crt",
+											},
+											{
+												Key:  "client.key",
+												Path: "client.key",
+											},
+										},
 									},
 								},
 							},
@@ -314,6 +330,12 @@ var _ = Describe("AuditlogForwarder", func() {
 					},
 				},
 			},
+		}
+		if includeCABundle {
+			expectedDeployment.Spec.Template.Spec.Volumes[3].Secret.Items = append(expectedDeployment.Spec.Template.Spec.Volumes[3].Secret.Items, corev1.KeyToPath{
+				Key:  "ca.crt",
+				Path: "ca.crt",
+			})
 		}
 		Expect(references.InjectAnnotations(expectedDeployment)).To(Succeed())
 
@@ -435,8 +457,9 @@ var _ = Describe("AuditlogForwarder", func() {
 			AuditOutputs: []auditlogforwarder.Output{
 				{
 					HTTP: &auditlogforwarder.OutputHTTP{
-						URL:           "https://audit-backend.example.com/events",
-						TLSSecretName: "audit-backend-tls",
+						URL:                       "https://audit-backend.example.com/events",
+						TLSSecretName:             "audit-backend-tls",
+						TLSSecretContainsCABundle: includeCABundle,
 					},
 				},
 			},
@@ -551,8 +574,36 @@ var _ = Describe("AuditlogForwarder", func() {
 				Expect(managedResourceSecret.Labels).To(HaveKeyWithValue("resources.gardener.cloud/garbage-collectable-reference", "true"))
 			})
 
-			It("should successfully deploy all resources", func() {
-				Expect(managedResource).To(consistOf(expectedObjects...))
+			Context("with CA bundle in HTTP output TLS", func() {
+				BeforeEach(func() {
+					includeCABundle = true
+				})
+
+				It("should successfully deploy all resources", func() {
+					Expect(slices.ContainsFunc(
+						expectedDeployment.Spec.Template.Spec.Volumes[3].Secret.Items,
+						func(k corev1.KeyToPath) bool {
+							return k.Key == "ca.crt"
+						}),
+					).To(BeTrue())
+					Expect(managedResource).To(consistOf(expectedObjects...))
+				})
+			})
+
+			Context("without CA bundle in HTTP output TLS", func() {
+				BeforeEach(func() {
+					includeCABundle = false
+				})
+
+				It("should successfully deploy all resources", func() {
+					Expect(managedResource).To(consistOf(expectedObjects...))
+					Expect(slices.ContainsFunc(
+						expectedDeployment.Spec.Template.Spec.Volumes[3].Secret.Items,
+						func(k corev1.KeyToPath) bool {
+							return k.Key == "ca.crt"
+						}),
+					).To(BeFalse())
+				})
 			})
 		})
 	})
