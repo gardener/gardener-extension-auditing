@@ -140,6 +140,8 @@ func New(
 
 var _ component.DeployWaiter = (*AuditlogForwarder)(nil)
 
+// AuditlogForwarder implements component.DeployWaiter to manage the deployment
+// of the auditlog-forwarder in the seed/runtime cluster.
 type AuditlogForwarder struct {
 	client         client.Client
 	reader         client.Reader
@@ -148,6 +150,8 @@ type AuditlogForwarder struct {
 	values         Values
 }
 
+// Deploy creates or updates the ManagedResource in the seed/runtime cluster
+// to deploy the auditlog-forwarder with the specified configuration.
 func (r *AuditlogForwarder) Deploy(ctx context.Context) error {
 	configs := secrets.ConfigsFor(r.namespace)
 	generatedSecrets, err := extensionssecretsmanager.GenerateAllSecrets(ctx, r.secretsManager, configs)
@@ -172,6 +176,8 @@ func (r *AuditlogForwarder) Deploy(ctx context.Context) error {
 	return nil
 }
 
+// Destroy removes the ManagedResource in the seed/runtime cluster
+// that deploys the auditlog-forwarder.
 func (r *AuditlogForwarder) Destroy(ctx context.Context) error {
 	return managedresources.DeleteForSeed(ctx, r.client, r.namespace, ManagedResourceName)
 }
@@ -180,6 +186,8 @@ func (r *AuditlogForwarder) Destroy(ctx context.Context) error {
 // to become healthy or deleted.
 var TimeoutWaitForManagedResource = 2 * time.Minute
 
+// Wait waits until the ManagedResource in the seed/runtime cluster
+// that deploys the auditlog-forwarder becomes healthy.
 func (r *AuditlogForwarder) Wait(ctx context.Context) error {
 	timeoutCtx, cancel := context.WithTimeout(ctx, TimeoutWaitForManagedResource)
 	defer cancel()
@@ -199,6 +207,8 @@ func (r *AuditlogForwarder) Wait(ctx context.Context) error {
 	}))
 }
 
+// WaitCleanup waits until the ManagedResource in the seed/runtime cluster
+// that deploys the auditlog-forwarder is deleted.
 func (r *AuditlogForwarder) WaitCleanup(ctx context.Context) error {
 	timeoutCtx, cancel := context.WithTimeout(ctx, TimeoutWaitForManagedResource)
 	defer cancel()
