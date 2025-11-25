@@ -123,3 +123,9 @@ make extension-operator-down
 ```
 
 The corresponding make target will delete the `Extension.operator.gardener.cloud` resource. Consequently, the gardener-operator will delete the auditing admission component and auditing ControllerDeployment and ControllerRegistration resources.
+
+Finally delete the `ValidatingWebhookConfiguration` from the Virtual Garden cluster.
+
+```bash
+kubectl --kubeconfig $(pwd)/../gardener/dev-setup/kubeconfigs/virtual-garden/kubeconfig delete validatingwebhookconfiguration gardener-extension-auditing-admission --ignore-not-found
+```
