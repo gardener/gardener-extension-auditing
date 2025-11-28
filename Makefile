@@ -135,6 +135,7 @@ extension-dev: $(SKAFFOLD) $(HELM) $(KUBECTL)
 
 extension-down: $(SKAFFOLD) $(HELM) $(KUBECTL)
 	$(SKAFFOLD) delete
+	$(KUBECTL) delete validatingwebhookconfiguration gardener-extension-auditing-admission --ignore-not-found
 
 extension-operator-up extension-operator-down: export SKAFFOLD_FILENAME = skaffold-operator.yaml
 extension-operator-up: $(SKAFFOLD) $(KIND) $(HELM) $(KUBECTL)
