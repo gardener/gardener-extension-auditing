@@ -9,7 +9,6 @@ import (
 	"os"
 
 	"github.com/gardener/gardener/extensions/pkg/controller/cmd"
-	extensionshealthcheckcontroller "github.com/gardener/gardener/extensions/pkg/controller/healthcheck"
 	extensionsheartbeatcontroller "github.com/gardener/gardener/extensions/pkg/controller/heartbeat"
 	extensionscmdwebhook "github.com/gardener/gardener/extensions/pkg/webhook/cmd"
 	"github.com/spf13/pflag"
@@ -21,7 +20,6 @@ import (
 	"github.com/gardener/gardener-extension-auditing/pkg/apis/config/v1alpha1"
 	"github.com/gardener/gardener-extension-auditing/pkg/apis/config/validation"
 	auditcontroller "github.com/gardener/gardener-extension-auditing/pkg/controller/audit"
-	healthcheckcontroller "github.com/gardener/gardener-extension-auditing/pkg/controller/healthcheck"
 	kapiwebhook "github.com/gardener/gardener-extension-auditing/pkg/webhook/kapiserver"
 )
 
@@ -94,7 +92,6 @@ func (c *AuditServiceConfig) Apply(config *apisconfig.Configuration) {
 func ControllerSwitches() *cmd.SwitchOptions {
 	return cmd.NewSwitchOptions(
 		cmd.Switch(auditcontroller.ControllerName, auditcontroller.AddToManager),
-		cmd.Switch(extensionshealthcheckcontroller.ControllerName, healthcheckcontroller.AddToManager),
 		cmd.Switch(extensionsheartbeatcontroller.ControllerName, extensionsheartbeatcontroller.AddToManager),
 	)
 }
