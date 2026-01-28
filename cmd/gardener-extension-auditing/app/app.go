@@ -21,7 +21,6 @@ import (
 	"k8s.io/component-base/version"
 	"k8s.io/component-base/version/verflag"
 	"k8s.io/utils/clock"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -106,14 +105,14 @@ func (o *Options) run(ctx context.Context) error {
 	ctrlConfig := o.auditOptions.Completed()
 	ctrlConfig.Apply(&auditcontroller.DefaultAddOptions.Config)
 	o.controllerOptions.Completed().Apply(&auditcontroller.DefaultAddOptions.ControllerOptions)
-	o.reconcileOptions.Completed().Apply(&auditcontroller.DefaultAddOptions.IgnoreOperationAnnotation, ptr.To(extensionsv1alpha1.ExtensionClassShoot))
+	o.reconcileOptions.Completed().Apply(&auditcontroller.DefaultAddOptions.IgnoreOperationAnnotation, &[]extensionsv1alpha1.ExtensionClass{extensionsv1alpha1.ExtensionClassShoot})
 	o.heartbeatOptions.Completed().Apply(&extensionsheartbeatcontroller.DefaultAddOptions)
 
 	if err := o.controllerSwitches.Completed().AddToManager(ctx, mgr); err != nil {
 		return fmt.Errorf("could not add controllers to manager: %w", err)
 	}
 
-	if _, err := o.webhookOptions.Completed().AddToManager(ctx, mgr, nil, false); err != nil {
+	if _, err := o.webhookOptions.Completed().AddToManager(ctx, mgr, nil); err != nil {
 		return fmt.Errorf("could not add the mutating webhook to manager: %w", err)
 	}
 
