@@ -6,6 +6,7 @@ tool (
 	github.com/ahmetb/gen-crd-api-reference-docs
 	github.com/gardener/gardener/hack
 	golang.org/x/tools/cmd/goimports
+	k8s.io/code-generator
 )
 
 require (
@@ -22,7 +23,6 @@ require (
 	k8s.io/apimachinery v0.34.3
 	k8s.io/autoscaler/vertical-pod-autoscaler v1.5.1
 	k8s.io/client-go v0.34.3
-	k8s.io/code-generator v0.34.3
 	k8s.io/component-base v0.34.3
 	k8s.io/utils v0.0.0-20260108192941-914a6e750570
 	sigs.k8s.io/controller-runtime v0.22.5
@@ -193,6 +193,7 @@ require (
 	istio.io/client-go v1.27.2 // indirect
 	k8s.io/apiextensions-apiserver v0.34.3 // indirect
 	k8s.io/apiserver v0.34.3 // indirect
+	k8s.io/code-generator v0.34.3 // indirect
 	k8s.io/gengo v0.0.0-20230829151522-9cce18d56c01 // indirect
 	k8s.io/gengo/v2 v2.0.0-20250820003526-c297c0c1eb9d // indirect
 	k8s.io/klog v1.0.0 // indirect
