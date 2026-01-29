@@ -72,9 +72,6 @@ var _ = Describe("AuditlogForwarder", func() {
 		expectedHTTPOutputSecret    *corev1.Secret
 
 		includeCABundle bool
-
-		shootMetadata auditlogforwarder.ShootMetadata
-		seedMetadata  auditlogforwarder.SeedMetadata
 	)
 
 	BeforeEach(func() {
@@ -103,16 +100,6 @@ var _ = Describe("AuditlogForwarder", func() {
 				Namespace: namespace,
 			},
 		}
-
-		shootMetadata = auditlogforwarder.ShootMetadata{
-			ID:        "shoot-id-123",
-			Name:      "test-shoot",
-			Namespace: "garden-test",
-		}
-		seedMetadata = auditlogforwarder.SeedMetadata{
-			ID:   "seed-id-456",
-			Name: "test-seed",
-		}
 		includeCABundle = false
 	})
 
@@ -127,11 +114,11 @@ var _ = Describe("AuditlogForwarder", func() {
 				},
 			},
 			InjectAnnotations: map[string]string{
-				"shoot.gardener.cloud/name":      shootMetadata.Name,
-				"shoot.gardener.cloud/namespace": shootMetadata.Namespace,
-				"shoot.gardener.cloud/id":        shootMetadata.ID,
-				"seed.gardener.cloud/name":       seedMetadata.Name,
-				"seed.gardener.cloud/id":         seedMetadata.ID,
+				"shoot.gardener.cloud/name":      "shoot-id-123",
+				"shoot.gardener.cloud/namespace": "garden-test",
+				"shoot.gardener.cloud/id":        "shoot-id-123",
+				"seed.gardener.cloud/name":       "test-seed",
+				"seed.gardener.cloud/id":         "seed-id-456",
 			},
 			Outputs: []forwarderconfigv1alpha1.Output{
 				{
@@ -450,9 +437,12 @@ var _ = Describe("AuditlogForwarder", func() {
 
 		values = auditlogforwarder.Values{
 			Image: image,
-			Metadata: auditlogforwarder.GardenerMetadata{
-				ShootMetadata: shootMetadata,
-				SeedMetadata:  seedMetadata,
+			MetadataAnnotations: map[string]string{
+				"shoot.gardener.cloud/name":      "shoot-id-123",
+				"shoot.gardener.cloud/namespace": "garden-test",
+				"shoot.gardener.cloud/id":        "shoot-id-123",
+				"seed.gardener.cloud/name":       "test-seed",
+				"seed.gardener.cloud/id":         "seed-id-456",
 			},
 			AuditOutputs: []auditlogforwarder.Output{
 				{

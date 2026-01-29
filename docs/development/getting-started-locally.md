@@ -70,7 +70,7 @@ export KUBECONFIG=$(pwd)/../gardener/example/gardener-local/kind/multi-zone/kube
 make extension-operator-up
 ```
 
-The corresponding make target will build the auditing admission and extension container images, OCI artifacts for the admission runtime and application charts, and the extension chart. Then, the container images and the OCI artifacts are pushed into the default skaffold registry (i.e. `garden.local.gardener.cloud:5001`). Next, the auditing `Extension.operator.gardener.cloud` resource is deployed into the KinD cluster. Based on this resource the gardener-operator will deploy the auditing admission component, as well as the auditing ControllerDeployment and ControllerRegistration resources.
+The corresponding make target will build the auditing admission and extension container images, OCI artifacts for the admission runtime and application charts, and the extension chart. Then, the container images and the OCI artifacts are pushed into the default skaffold registry (i.e. `registry.local.gardener.cloud:5001`). Next, the auditing `Extension.operator.gardener.cloud` resource is deployed into the KinD cluster. Based on this resource the gardener-operator will deploy the auditing admission component, as well as the auditing ControllerDeployment and ControllerRegistration resources.
 
 ### Creating a Shoot Cluster
 
@@ -109,6 +109,86 @@ kubectl apply -f example/local-setup/shoot.yaml
 kubectl --kubeconfig $(pwd)/../gardener/example/gardener-local/kind/multi-zone/kubeconfig apply -f example/local-setup/netpol.yaml
 ```
 
+### Enable the extension for the Garden cluster
+
+1. Target the runtime cluster
+
+```bash
+export KUBECONFIG=$(pwd)/../gardener/example/gardener-local/kind/multi-zone/kubeconfig
+```
+
+2. Create a secret containing the credentials used for mTLS.
+
+```bash
+kubectl -n garden create secret generic echo-server-creds \
+    --from-file=ca.crt=example/local-setup/dev/certs/ca.crt \
+    --from-file=client.crt=example/local-setup/dev/certs/client.crt \
+    --from-file=client.key=example/local-setup/dev/certs/client.key
+```
+
+3. Apply audit and network policies
+
+```bash
+kubectl apply -f example/local-setup/garden/policy.yaml
+kubectl apply -f example/local-setup/garden/policy-garden.yaml
+kubectl apply -f example/local-setup/garden/netpol.yaml
+```
+
+4. Patch the `Garden` resource to enable the extension
+
+Use `kubectl patch` to add the auditing extension configuration to the existing Garden resource:
+
+```bash
+kubectl patch garden local --type=merge -p '
+spec:
+  extensions:
+  - type: auditing
+    providerConfig:
+      apiVersion: auditing.extensions.gardener.cloud/v1alpha1
+      kind: AuditConfiguration
+      backends:
+      - http:
+          url: https://echo-server.echo-server.svc.cluster.local
+          tls:
+            secretReferenceName: audit-mtls-creds
+  resources:
+  - name: audit-mtls-creds
+    resourceRef:
+      apiVersion: v1
+      kind: Secret
+      name: echo-server-creds
+  virtualCluster:
+    kubernetes:
+      kubeAPIServer:
+        auditConfig:
+          auditPolicy:
+            configMapRef:
+              name: audit-policy
+    gardener:
+      gardenerAPIServer:
+        auditConfig:
+          auditPolicy:
+            configMapRef:
+              name: audit-policy-garden
+'
+```
+
+> [!NOTE]
+>
+> This patch merges the auditing extension configuration with the existing Garden spec. If other extensions are already configured, they will be preserved. The URL points to the local echo-server deployed in the setup, and the secret references the `echo-server-creds` created in step 2.
+
+Verify the extension is enabled:
+
+```bash
+kubectl get garden local -o jsonpath='{.spec.extensions[?(@.type=="auditing")]}'
+```
+
+5. Reconcile the `Garden` resource
+
+```bash
+kubectl annotate garden local gardener.cloud/operation=reconcile
+```
+
 ### Delete the auditing `Extension.operator.gardener.cloud` resource
 
 Delete any shoots using the extension.
@@ -116,6 +196,8 @@ Delete any shoots using the extension.
 kubectl -n garden-local annotate shoot local confirmation.gardener.cloud/deletion=true
 kubectl -n garden-local delete shoot local
 ```
+
+Disable the extension if configured for the Garden cluster.
 
 Make sure the environment variable `KUBECONFIG` points to the operator's local KinD cluster and then run:
 ```bash

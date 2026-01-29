@@ -194,12 +194,12 @@ var _ = Describe("Ensurer", func() {
 
 			sha := sha256.Sum256(kubeconfigData)
 			short := hex.EncodeToString(sha[:])[:8]
-			annotationKey := "auditing.extensions.gardener.cloud/secret-" + short
+			annotationKey := "auditing.extensions.gardener.cloud/secret-auditlog-forwarder-webhook-kubeconfig"
 
 			Expect(deployment.Annotations).To(HaveKey(annotationKey))
-			Expect(deployment.Annotations[annotationKey]).To(Equal(constants.AuditWebhookKubeConfigSecretName))
+			Expect(deployment.Annotations[annotationKey]).To(Equal(short))
 			Expect(deployment.Spec.Template.Annotations).To(HaveKey(annotationKey))
-			Expect(deployment.Spec.Template.Annotations[annotationKey]).To(Equal(constants.AuditWebhookKubeConfigSecretName))
+			Expect(deployment.Spec.Template.Annotations[annotationKey]).To(Equal(short))
 		})
 
 		It("should modify existing audit webhook elements", func() {

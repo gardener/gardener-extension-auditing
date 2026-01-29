@@ -1,5 +1,9 @@
 {{- define "name" -}}
+{{- if .Values.gardener.runtimeCluster.enabled -}}
+gardener-extension-auditing-runtime
+{{- else -}}
 gardener-extension-auditing
+{{- end -}}
 {{- end -}}
 
 {{- define "config" -}}

@@ -7,6 +7,16 @@ metadata:
     app.kubernetes.io/name: {{ include "name" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
 rules:
+{{- if .Values.gardener.runtimeCluster.enabled }}
+- apiGroups:
+  - operator.gardener.cloud
+  resources:
+  - gardens
+  verbs:
+  - get
+  - list
+  - watch
+{{- else }}
 - apiGroups:
   - extensions.gardener.cloud
   resources:
@@ -15,7 +25,11 @@ rules:
   - get
   - list
   - watch
+{{- end }}
 - apiGroups:
+  {{- if .Values.gardener.runtimeCluster.enabled }}
+  - operator.gardener.cloud
+  {{- end }}
   - extensions.gardener.cloud
   resources:
   - extensions
@@ -64,6 +78,20 @@ rules:
   - deployments
   verbs:
   - get
+{{- if .Values.gardener.runtimeCluster.enabled }}
+  - list
+{{- end }}
+{{- if .Values.gardener.runtimeCluster.enabled }}
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  resourceNames:
+  - gardener-apiserver
+  - virtual-garden-kube-apiserver
+  verbs:
+  - patch
+{{- end }}
 - apiGroups:
   - ""
   resources:

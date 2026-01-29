@@ -30,4 +30,7 @@ const (
 	AuditWebhookConfigDir = "/var/run/secrets/audit-webhook"
 	// AuditWebhookCADir is the directory used for mounting the auditlog proxy CA used by the kube-apiserver.
 	AuditWebhookCADir = "/var/run/secrets/audit-webhook-ca"
+
+	// AuditWebhookAnnotationKey is the annotation key that the auditing webhook adds to the apiserver deployments.
+	AuditWebhookAnnotationKey = "auditing.extensions.gardener.cloud/secret-" + AuditWebhookKubeConfigSecretName
 )

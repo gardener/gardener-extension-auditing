@@ -84,12 +84,12 @@ func (e *ensurer) EnsureKubeAPIServerDeployment(ctx context.Context, gctx extens
 				return clusterErr
 			}
 
-			extensionExist, extensionError := auditlogExtensionExists(ctx, e.client, newDeployment.Namespace)
+			extension, extensionError := getAuditingExtension(ctx, e.client, newDeployment.Namespace)
 			if extensionError != nil {
 				return extensionError
 			}
 
-			if cluster.Shoot.DeletionTimestamp != nil && !extensionExist {
+			if cluster.Shoot.DeletionTimestamp != nil && extension == nil {
 				return nil
 			}
 
@@ -103,22 +103,21 @@ func (e *ensurer) EnsureKubeAPIServerDeployment(ctx context.Context, gctx extens
 		data := secret.Data["kubeconfig"]
 		if len(data) != 0 {
 			var (
-				sha           = sha256.Sum256(data)
-				short         = hex.EncodeToString(sha[:])[:8]
-				annotationKey = "auditing.extensions.gardener.cloud/secret-" + short
+				sha   = sha256.Sum256(data)
+				short = hex.EncodeToString(sha[:])[:8]
 			)
 
 			if newDeployment.Annotations == nil {
 				newDeployment.Annotations = map[string]string{}
 			}
-			newDeployment.Annotations[annotationKey] = secret.Name
+			newDeployment.Annotations[constants.AuditWebhookAnnotationKey] = short
 			if template.Annotations == nil {
 				template.Annotations = map[string]string{}
 			}
-			template.Annotations[annotationKey] = secret.Name
+			template.Annotations[constants.AuditWebhookAnnotationKey] = short
 		}
 
-		e.ensureKubeAPIServerIsMutated(ps, c)
+		ensureKubeAPIServerIsMutated(ps, c)
 	}
 
 	return nil
@@ -134,7 +133,7 @@ func NewEnsurer(c client.Client, logger logr.Logger) genericmutator.Ensurer {
 
 // ensureKubeAPIServerIsMutated ensures that the kube-apiserver deployment is mutated accordingly
 // so that it is able to communicate with the auditlog-proxy
-func (e *ensurer) ensureKubeAPIServerIsMutated(ps *corev1.PodSpec, c *corev1.Container) {
+func ensureKubeAPIServerIsMutated(ps *corev1.PodSpec, c *corev1.Container) {
 	var (
 		maxEventSize = MB                // 1MB
 		maxBatchSize = maxEventSize * 10 // kube-apiserver will fail to start if batchSize < eventSize, thus explicitly set higher value
@@ -173,17 +172,17 @@ func (e *ensurer) ensureKubeAPIServerIsMutated(ps *corev1.PodSpec, c *corev1.Con
 	})
 }
 
-func auditlogExtensionExists(ctx context.Context, c client.Client, namespace string) (bool, error) {
+func getAuditingExtension(ctx context.Context, c client.Client, namespace string) (*extensionsv1alpha1.Extension, error) {
 	extensions := extensionsv1alpha1.ExtensionList{}
 	if err := c.List(ctx, &extensions, client.InNamespace(namespace)); err != nil {
-		return false, err
+		return nil, err
 	}
 
 	for _, extension := range extensions.Items {
 		if extension.Spec.Type == constants.ExtensionType {
-			return true, nil
+			return &extension, nil
 		}
 	}
 
-	return false, nil
+	return nil, nil
 }

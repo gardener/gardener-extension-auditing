@@ -44,3 +44,6 @@ imageVectorOverwrite: {}
 
 gardener:
   version: ""
+
+  runtimeCluster:
+    enabled: false
