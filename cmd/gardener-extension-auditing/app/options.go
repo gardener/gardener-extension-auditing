@@ -43,6 +43,7 @@ func NewOptions() *Options {
 		"auditing",
 		"",
 		nil,
+		nil,
 		webhookServerOptions,
 		webhookSwitches,
 	)
