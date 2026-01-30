@@ -29,6 +29,7 @@ type GardenAPIServerMutator struct {
 	logger logr.Logger
 }
 
+// NewGardenAPIServerMutator creates a new GardenAPIServerMutator.
 func NewGardenAPIServerMutator(client client.Client, logger logr.Logger) *GardenAPIServerMutator {
 	return &GardenAPIServerMutator{
 		client: client,
@@ -36,6 +37,7 @@ func NewGardenAPIServerMutator(client client.Client, logger logr.Logger) *Garden
 	}
 }
 
+// Mutate mutates the gardener-apiserver or virtual-garden-kube-apiserver deployment to enable auditing.
 func (m *GardenAPIServerMutator) Mutate(ctx context.Context, newObj, _ client.Object) error {
 	newDeployment, ok := newObj.(*appsv1.Deployment)
 	if !ok {
