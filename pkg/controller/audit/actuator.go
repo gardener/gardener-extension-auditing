@@ -131,7 +131,7 @@ func (a *actuator) Reconcile(ctx context.Context, log logr.Logger, ex *extension
 			clock.RealClock{},
 			a.client,
 			garden,
-			secrets.ManagerIdentity,
+			secrets.ManagerIdentityRuntime,
 			configs,
 			namespace,
 		)
@@ -206,8 +206,8 @@ func (a *actuator) Reconcile(ctx context.Context, log logr.Logger, ex *extension
 	}
 
 	if extensionClass == extensionsv1alpha1.ExtensionClassGarden {
-		// Patch the deployments for gardener and kube-apiserver in order to trigger the mutating webhook webhook.
-		for _, name := range []string{"gardener-apiserver", "virtual-garden-" + v1beta1constants.DeploymentNameKubeAPIServer} {
+		// Patch the deployments for gardener and kube apiserver in order to trigger the mutating webhook.
+		for _, name := range []string{"gardener-apiserver", operatorv1alpha1.DeploymentNameVirtualGardenKubeAPIServer} {
 			depl := &appsv1.Deployment{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: namespace,
@@ -259,7 +259,7 @@ func (a *actuator) delete(ctx context.Context, log logr.Logger, ex *extensionsv1
 
 	if extensionClass == extensionsv1alpha1.ExtensionClassGarden {
 		// Patch the deployments for gardener and kube-apiserver in order to trigger webhook.
-		for _, name := range []string{"gardener-apiserver", "virtual-garden-" + v1beta1constants.DeploymentNameKubeAPIServer} {
+		for _, name := range []string{"gardener-apiserver", operatorv1alpha1.DeploymentNameVirtualGardenKubeAPIServer} {
 			depl := &appsv1.Deployment{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: namespace,
@@ -349,7 +349,7 @@ func (a *actuator) delete(ctx context.Context, log logr.Logger, ex *extensionsv1
 			clock.RealClock{},
 			a.client,
 			garden,
-			secrets.ManagerIdentity,
+			secrets.ManagerIdentityRuntime,
 			configs,
 			namespace,
 		)

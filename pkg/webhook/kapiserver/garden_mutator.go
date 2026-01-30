@@ -21,21 +21,22 @@ import (
 	"github.com/gardener/gardener-extension-auditing/pkg/constants"
 )
 
-var _ extensionswebhook.Mutator = (*APIServerMutator)(nil)
+var _ extensionswebhook.Mutator = (*GardenAPIServerMutator)(nil)
 
-type APIServerMutator struct {
+// GardenAPIServerMutator mutates the Gardener and Kube API server deployments to enable auditing.
+type GardenAPIServerMutator struct {
 	client client.Client
 	logger logr.Logger
 }
 
-func NewAPIServerMutator(client client.Client, logger logr.Logger) *APIServerMutator {
-	return &APIServerMutator{
+func NewGardenAPIServerMutator(client client.Client, logger logr.Logger) *GardenAPIServerMutator {
+	return &GardenAPIServerMutator{
 		client: client,
 		logger: logger,
 	}
 }
 
-func (m *APIServerMutator) Mutate(ctx context.Context, newObj, _ client.Object) error {
+func (m *GardenAPIServerMutator) Mutate(ctx context.Context, newObj, _ client.Object) error {
 	newDeployment, ok := newObj.(*appsv1.Deployment)
 	if !ok {
 		return fmt.Errorf("wrong object type, expected: *appsv1.Deployment, got: %T", newObj)
@@ -67,29 +68,29 @@ func (m *APIServerMutator) Mutate(ctx context.Context, newObj, _ client.Object) 
 		}
 	}
 
+	secret := &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: constants.AuditWebhookKubeConfigSecretName, Namespace: newDeployment.Namespace}}
+	if err := m.client.Get(ctx, client.ObjectKeyFromObject(secret), secret); err != nil {
+		return err
+	}
+
+	data := secret.Data["kubeconfig"]
+	if len(data) != 0 {
+		var (
+			sha   = sha256.Sum256(data)
+			short = hex.EncodeToString(sha[:])[:8]
+		)
+
+		if newDeployment.Annotations == nil {
+			newDeployment.Annotations = map[string]string{}
+		}
+		newDeployment.Annotations[constants.AuditWebhookAnnotationKey] = short
+		if template.Annotations == nil {
+			template.Annotations = map[string]string{}
+		}
+		template.Annotations[constants.AuditWebhookAnnotationKey] = short
+	}
+
 	for _, c := range containers {
-		secret := &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: constants.AuditWebhookKubeConfigSecretName, Namespace: newDeployment.Namespace}}
-		if err := m.client.Get(ctx, client.ObjectKeyFromObject(secret), secret); err != nil {
-			return err
-		}
-
-		data := secret.Data["kubeconfig"]
-		if len(data) != 0 {
-			var (
-				sha   = sha256.Sum256(data)
-				short = hex.EncodeToString(sha[:])[:8]
-			)
-
-			if newDeployment.Annotations == nil {
-				newDeployment.Annotations = map[string]string{}
-			}
-			newDeployment.Annotations[constants.AuditWebhookAnnotationKey] = short
-			if template.Annotations == nil {
-				template.Annotations = map[string]string{}
-			}
-			template.Annotations[constants.AuditWebhookAnnotationKey] = short
-		}
-
 		ensureKubeAPIServerIsMutated(ps, c)
 	}
 

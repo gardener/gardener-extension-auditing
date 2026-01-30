@@ -41,7 +41,7 @@ func NewAuditControllerCommand() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:           "auditing",
-		Short:         "Audit controller manages audit logging within a shoot.",
+		Short:         "Audit controller manages audit logging within a shoot or garden.",
 		SilenceErrors: true,
 
 		RunE: func(cmd *cobra.Command, _ []string) error {

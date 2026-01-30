@@ -11,9 +11,9 @@ For a complete overview of the audit event format, see the [Audit Event Format d
 
 When the auditing extension is configured for a Garden cluster (via `operator.gardener.cloud/v1alpha1` Garden resource), the following annotation is added to each audit event:
 
-| Annotation Key                      | Description                                         | Example                                  |
-|-------------------------------------|-----------------------------------------------------|------------------------------------------|
-| `garden.gardener.cloud/id`          | Unique identifier (UID) of the Garden cluster       | `a1b2c3d4-e5f6-7890-abcd-ef1234567890`   |
+| Annotation Key                      | Description                                                         | Example                                  |
+|-------------------------------------|---------------------------------------------------------------------|------------------------------------------|
+| `garden.gardener.cloud/id`          | Unique identifier (UID) of the Garden cluster (garden.metadata.uid) | `a1b2c3d4-e5f6-7890-abcd-ef1234567890`   |
 
 This enables operators to:
 - Correlate audit events with specific Garden clusters
@@ -32,7 +32,7 @@ Below is an example showing the Garden-specific annotations in an audit event:
       "kind": "Event",
       "apiVersion": "audit.k8s.io/v1",
       "level": "Metadata",
-      "auditID": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "auditID": "ba578868-b445-4855-b45c-722d38032874",
       "stage": "ResponseComplete",
       "requestURI": "/api/v1/namespaces/default/serviceaccounts",
       "verb": "list",

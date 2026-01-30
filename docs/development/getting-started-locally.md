@@ -38,9 +38,9 @@ The make target will then deploy the auditing admission component. It will build
 
 1. Deploy an auditing policy.
 
-    [`example/local-setup/policy.yaml`](../../example/local-setup/policy.yaml) contains a Policy specification:
+    [`example/local-setup/audit-policy.yaml`](../../example/local-setup/audit-policy.yaml) contains a Policy specification:
     ```bash
-    kubectl apply -f example/local-setup/policy.yaml
+    kubectl apply -f example/local-setup/audit-policy.yaml
     ```
 
 1. Create a Shoot cluster.
@@ -92,9 +92,9 @@ The corresponding make target will build the auditing admission and extension co
 
 1. Deploy an auditing policy.
 
-    [`example/local-setup/policy.yaml`](../../example/local-setup/policy.yaml) contains a Policy specification:
+    [`example/local-setup/audit-policy.yaml`](../../example/local-setup/audit-policy.yaml) contains a Policy specification:
     ```bash
-    kubectl apply -f example/local-setup/policy.yaml
+    kubectl apply -f example/local-setup/audit-policy.yaml
     ```
 
 1. Create a Shoot cluster.
@@ -131,8 +131,8 @@ The corresponding make target will build the auditing admission and extension co
 1. Apply audit and network policies
 
     ```bash
-    kubectl apply -f example/local-setup/garden/policy.yaml
-    kubectl apply -f example/local-setup/garden/policy-garden.yaml
+    kubectl apply -f example/local-setup/garden/audit-policy.yaml
+    kubectl apply -f example/local-setup/garden/audit-policy-garden.yaml
     kubectl apply -f example/local-setup/garden/netpol.yaml
     ```
 
@@ -201,6 +201,17 @@ The corresponding make target will build the auditing admission and extension co
     ```
 
 1. Disable the extension if configured for the Garden cluster.
+
+    ```bash
+    kubectl patch garden local --type=json -p '[
+      {"op": "test", "path": "/spec/extensions/0/type", "value": "auditing"},
+      {"op": "remove", "path": "/spec/extensions/0"},
+      {"op": "test", "path": "/spec/resources/0/name", "value": "audit-mtls-creds"},
+      {"op": "remove", "path": "/spec/resources/0"},
+      {"op": "remove", "path": "/spec/virtualCluster/kubernetes/kubeAPIServer/auditConfig"},
+      {"op": "remove", "path": "/spec/virtualCluster/gardener/gardenerAPIServer/auditConfig"}
+    ]'
+    ```
 
 1. Make sure the environment variable `KUBECONFIG` points to the operator's local KinD cluster and then run:
 

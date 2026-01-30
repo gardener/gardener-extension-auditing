@@ -45,7 +45,7 @@ type AddOptions struct {
 func AddToManager(mgr manager.Manager) (*extensionswebhook.Webhook, error) {
 	logger.Info("Adding webhook to manager")
 
-	// We support only a single class simultaniously.
+	// We support only a single class simultaneously.
 	// Depending on the class, we adjust the namespace selector accordingly.
 	var (
 		namespaceLabelSelectorRequirement metav1.LabelSelectorRequirement
@@ -78,13 +78,13 @@ func AddToManager(mgr manager.Manager) (*extensionswebhook.Webhook, error) {
 		namespaceLabelSelectorRequirement = metav1.LabelSelectorRequirement{
 			Key:      corev1.LabelMetadataName,
 			Operator: metav1.LabelSelectorOpIn,
-			Values:   []string{"garden"},
+			Values:   []string{v1beta1constants.GardenNamespace},
 		}
 		objectLabelSelector = map[string]string{
 			v1beta1constants.LabelRole: v1beta1constants.LabelAPIServer,
 		}
 
-		mutator = NewAPIServerMutator(mgr.GetClient(), logger)
+		mutator = NewGardenAPIServerMutator(mgr.GetClient(), logger)
 	}
 
 	types := []extensionswebhook.Type{
