@@ -18,6 +18,10 @@ To enable audit log forwarding for a Garden cluster:
 1. Configure an [Audit Policy](https://github.com/gardener/gardener/blob/master/docs/usage/security/shoot_auditpolicy.md) for the Garden's virtual cluster `kube-apiserver` and `gardener-apiserver`. Note, the two API servers are handling different APIs respectively each of them has own specific audit policy scoped to the served resources.
 2. Add an entry of type `auditing` under `spec.extensions` with a `providerConfig` of kind `AuditConfiguration`
 
+> [!CAUTION]
+>
+> As of now the extension configuration is not validated when applied to the Garden object. Operators should treat with extra caution.
+
 Minimal example:
 
 ```yaml
