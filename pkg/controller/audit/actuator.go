@@ -215,11 +215,20 @@ func (a *actuator) Reconcile(ctx context.Context, log logr.Logger, ex *extension
 				},
 			}
 
-			if err := a.client.Patch(ctx, depl, client.RawPatch(types.StrategicMergePatchType, []byte("{}"))); err != nil {
+			if err := a.client.Get(ctx, client.ObjectKeyFromObject(depl), depl); err != nil {
 				if apierrors.IsNotFound(err) {
 					log.Info("Skip patching deployment as it does not exist", "key", client.ObjectKeyFromObject(depl))
 					continue
 				}
+				return err
+			}
+
+			if depl.DeletionTimestamp != nil {
+				log.Info("Skip patching deployment as it is being deleted", "key", client.ObjectKeyFromObject(depl))
+				continue
+			}
+
+			if err := a.client.Patch(ctx, depl, client.RawPatch(types.StrategicMergePatchType, []byte("{}"))); err != nil {
 				return err
 			}
 		}
@@ -273,6 +282,11 @@ func (a *actuator) delete(ctx context.Context, log logr.Logger, ex *extensionsv1
 					continue
 				}
 				return err
+			}
+
+			if depl.DeletionTimestamp != nil {
+				log.Info("Skip patching deployment as it is being deleted", "key", client.ObjectKeyFromObject(depl))
+				continue
 			}
 
 			if _, ok := depl.Annotations[constants.AuditWebhookAnnotationKey]; !ok {
