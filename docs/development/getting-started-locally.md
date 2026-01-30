@@ -185,12 +185,6 @@ The corresponding make target will build the auditing admission and extension co
     kubectl get garden local -o jsonpath='{.spec.extensions[?(@.type=="auditing")]}'
     ```
 
-1. Reconcile the `Garden` resource
-
-    ```bash
-    kubectl annotate garden local gardener.cloud/operation=reconcile
-    ```
-
 ### Delete the auditing `Extension.operator.gardener.cloud` resource
 
 1. Delete any shoots using the extension.
