@@ -32,7 +32,7 @@ import (
 
 	auditinstall "github.com/gardener/gardener-extension-auditing/pkg/apis/auditing/install"
 	auditcontroller "github.com/gardener/gardener-extension-auditing/pkg/controller/audit"
-	kapiwebhook "github.com/gardener/gardener-extension-auditing/pkg/webhook/kapiserver"
+	apiserverwebhook "github.com/gardener/gardener-extension-auditing/pkg/webhook/apiserver"
 )
 
 // NewAuditControllerCommand creates a new command that is used to start the auditing service controller.
@@ -130,7 +130,7 @@ func (o *Options) run(ctx context.Context, log logr.Logger) error {
 	o.reconcileOptions.Completed().Apply(&auditcontroller.DefaultAddOptions.IgnoreOperationAnnotation, &auditcontroller.DefaultAddOptions.ExtensionClasses)
 	o.heartbeatOptions.Completed().Apply(&extensionsheartbeatcontroller.DefaultAddOptions)
 
-	kapiwebhook.DefaultAddOptions.ExtensionClasses = o.reconcileOptions.Completed().ExtensionClasses
+	apiserverwebhook.DefaultAddOptions.ExtensionClasses = o.reconcileOptions.Completed().ExtensionClasses
 
 	if err := o.controllerSwitches.Completed().AddToManager(ctx, mgr); err != nil {
 		return fmt.Errorf("could not add controllers to manager: %w", err)

@@ -27,7 +27,7 @@ build:
             - pkg/constants
             - pkg/controller/audit
             - pkg/secrets
-            - pkg/webhook/kapiserver
+            - pkg/webhook/apiserver
             - VERSION
         ldflags:
           - '{{.LD_FLAGS}}'

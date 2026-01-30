@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package kapiserver_test
+package apiserver_test
 
 import (
 	"context"
@@ -32,7 +32,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/gardener/gardener-extension-auditing/pkg/constants"
-	"github.com/gardener/gardener-extension-auditing/pkg/webhook/kapiserver"
+	"github.com/gardener/gardener-extension-auditing/pkg/webhook/apiserver"
 )
 
 var _ = Describe("Ensurer", func() {
@@ -157,7 +157,7 @@ var _ = Describe("Ensurer", func() {
 				},
 			}
 
-			ensurer = kapiserver.NewEnsurer(fakeClient, logger)
+			ensurer = apiserver.NewEnsurer(fakeClient, logger)
 			gctx = &mockGardenContext{}
 		})
 

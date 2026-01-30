@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package kapiserver
+package apiserver
 
 import (
 	"context"
@@ -91,7 +91,7 @@ func (m *GardenAPIServerMutator) Mutate(ctx context.Context, newObj, _ client.Ob
 	}
 
 	for _, c := range containers {
-		ensureKubeAPIServerIsMutated(ps, c)
+		ensureAPIServerIsMutated(ps, c)
 	}
 
 	return nil

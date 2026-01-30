@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package kapiserver_test
+package apiserver_test
 
 import (
 	"testing"
@@ -11,7 +11,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestEnsurer(t *testing.T) {
+func TestWebhook(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Kube API Server Ensurer Suite")
+	RunSpecs(t, "API Server Webhook Suite")
 }
