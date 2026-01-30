@@ -191,7 +191,7 @@ The corresponding make target will build the auditing admission and extension co
 
     ```bash
     kubectl -n garden-local annotate shoot local confirmation.gardener.cloud/deletion=true
-    kubectl -n garden-local delete shoot local
+    kubectl -n garden-local delete shoot local --wait=false
     ```
 
 1. Disable the extension if configured for the Garden cluster.
