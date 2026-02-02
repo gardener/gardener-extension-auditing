@@ -20,7 +20,10 @@ spec:
         ociRepository:
           ref: europe-docker.pkg.dev/gardener-project/public/charts/gardener/extensions/auditing:v0.2.0-dev
   resources:
-  - kind: Extension
+  - clusterCompatibility:
+    - garden
+    - shoot
+    kind: Extension
     lifecycle:
       delete: AfterKubeAPIServer
       migrate: AfterKubeAPIServer

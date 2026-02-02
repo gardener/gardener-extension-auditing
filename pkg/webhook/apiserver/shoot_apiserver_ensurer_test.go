@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-package kapiserver_test
+package apiserver_test
 
 import (
 	"context"
@@ -32,7 +32,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/gardener/gardener-extension-auditing/pkg/constants"
-	"github.com/gardener/gardener-extension-auditing/pkg/webhook/kapiserver"
+	"github.com/gardener/gardener-extension-auditing/pkg/webhook/apiserver"
 )
 
 var _ = Describe("Ensurer", func() {
@@ -102,6 +102,8 @@ var _ = Describe("Ensurer", func() {
 				}
 			}
 		}
+
+		webhookSecret *corev1.Secret
 	)
 
 	BeforeEach(func() {
@@ -125,6 +127,16 @@ var _ = Describe("Ensurer", func() {
 
 		ctrl = gomock.NewController(GinkgoT())
 		fakeClient = fakeclient.NewClientBuilder().WithScheme(kubernetes.SeedScheme).Build()
+
+		webhookSecret = &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      constants.AuditWebhookKubeConfigSecretName,
+				Namespace: namespace,
+			},
+			Data: map[string][]byte{
+				"kubeconfig": []byte("test-kubeconfig-data"),
+			},
+		}
 	})
 
 	AfterEach(func() {
@@ -157,20 +169,31 @@ var _ = Describe("Ensurer", func() {
 				},
 			}
 
-			ensurer = kapiserver.NewEnsurer(fakeClient, logger)
+			ensurer = apiserver.NewShootAPIServerEnsurer(fakeClient, logger)
 			gctx = &mockGardenContext{}
 		})
 
 		It("should add audit webhook configuration to kube-apiserver deployment when secret exists", func() {
-			webhookSecret := &corev1.Secret{
+			Expect(fakeClient.Create(ctx, webhookSecret)).To(Succeed())
+
+			Expect(ensurer.EnsureKubeAPIServerDeployment(ctx, gctx, deployment, nil)).To(Succeed())
+			checkDeploymentIsCorrectlyMutated(deployment)
+		})
+
+		It("should add audit webhook configuration when extension class is nil (defaults to Shoot)", func() {
+			extensionWithNilClass := &extensionsv1alpha1.Extension{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      constants.AuditWebhookKubeConfigSecretName,
+					Name:      "auditing-ext",
 					Namespace: namespace,
 				},
-				Data: map[string][]byte{
-					"kubeconfig": []byte("test-kubeconfig-data"),
+				Spec: extensionsv1alpha1.ExtensionSpec{
+					DefaultSpec: extensionsv1alpha1.DefaultSpec{
+						Type: constants.ExtensionType,
+						// Class is nil, should default to ExtensionClassShoot
+					},
 				},
 			}
+			Expect(fakeClient.Create(ctx, extensionWithNilClass)).To(Succeed())
 			Expect(fakeClient.Create(ctx, webhookSecret)).To(Succeed())
 
 			Expect(ensurer.EnsureKubeAPIServerDeployment(ctx, gctx, deployment, nil)).To(Succeed())
@@ -194,24 +217,15 @@ var _ = Describe("Ensurer", func() {
 
 			sha := sha256.Sum256(kubeconfigData)
 			short := hex.EncodeToString(sha[:])[:8]
-			annotationKey := "auditing.extensions.gardener.cloud/secret-" + short
+			annotationKey := "auditing.extensions.gardener.cloud/secret-auditlog-forwarder-webhook-kubeconfig"
 
 			Expect(deployment.Annotations).To(HaveKey(annotationKey))
-			Expect(deployment.Annotations[annotationKey]).To(Equal(constants.AuditWebhookKubeConfigSecretName))
+			Expect(deployment.Annotations[annotationKey]).To(Equal(short))
 			Expect(deployment.Spec.Template.Annotations).To(HaveKey(annotationKey))
-			Expect(deployment.Spec.Template.Annotations[annotationKey]).To(Equal(constants.AuditWebhookKubeConfigSecretName))
+			Expect(deployment.Spec.Template.Annotations[annotationKey]).To(Equal(short))
 		})
 
 		It("should modify existing audit webhook elements", func() {
-			webhookSecret := &corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      constants.AuditWebhookKubeConfigSecretName,
-					Namespace: namespace,
-				},
-				Data: map[string][]byte{
-					"kubeconfig": []byte("test-kubeconfig-data"),
-				},
-			}
 			Expect(fakeClient.Create(ctx, webhookSecret)).To(Succeed())
 
 			// Add some existing audit webhook args with different values
@@ -225,15 +239,6 @@ var _ = Describe("Ensurer", func() {
 		})
 
 		It("should remove audit flags from command field", func() {
-			webhookSecret := &corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      constants.AuditWebhookKubeConfigSecretName,
-					Namespace: namespace,
-				},
-				Data: map[string][]byte{
-					"kubeconfig": []byte("test-kubeconfig-data"),
-				},
-			}
 			Expect(fakeClient.Create(ctx, webhookSecret)).To(Succeed())
 
 			deployment.Spec.Template.Spec.Containers[0].Command = []string{
@@ -325,7 +330,8 @@ var _ = Describe("Ensurer", func() {
 				},
 				Spec: extensionsv1alpha1.ExtensionSpec{
 					DefaultSpec: extensionsv1alpha1.DefaultSpec{
-						Type: constants.ExtensionType,
+						Type:  constants.ExtensionType,
+						Class: ptr.To(extensionsv1alpha1.ExtensionClassShoot),
 					},
 				},
 			}
@@ -336,16 +342,38 @@ var _ = Describe("Ensurer", func() {
 			Expect(err).To(MatchError(ContainSubstring("auditlog-forwarder-webhook-kubeconfig")))
 		})
 
-		It("should preserve audit-policy-file flag when mutating", func() {
-			webhookSecret := &corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      constants.AuditWebhookKubeConfigSecretName,
-					Namespace: namespace,
-				},
-				Data: map[string][]byte{
-					"kubeconfig": []byte("test-kubeconfig-data"),
+		It("should not mutate deployment when extension has wrong class and secret does not exist", func() {
+			cluster := &extensions.Cluster{
+				Shoot: &gardencorev1beta1.Shoot{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-shoot",
+						Namespace: namespace,
+					},
 				},
 			}
+			gctx.cluster = cluster
+
+			extensionWithWrongClass := &extensionsv1alpha1.Extension{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "auditing-ext",
+					Namespace: namespace,
+				},
+				Spec: extensionsv1alpha1.ExtensionSpec{
+					DefaultSpec: extensionsv1alpha1.DefaultSpec{
+						Type:  constants.ExtensionType,
+						Class: ptr.To(extensionsv1alpha1.ExtensionClassGarden),
+					},
+				},
+			}
+			Expect(fakeClient.Create(ctx, extensionWithWrongClass)).To(Succeed())
+
+			err := ensurer.EnsureKubeAPIServerDeployment(ctx, gctx, deployment, nil)
+			Expect(err).To(BeNotFoundError())
+			Expect(err).To(MatchError(ContainSubstring("auditlog-forwarder-webhook-kubeconfig")))
+			checkDeploymentIsNotMutated(deployment)
+		})
+
+		It("should preserve audit-policy-file flag when mutating", func() {
 			Expect(fakeClient.Create(ctx, webhookSecret)).To(Succeed())
 
 			deployment.Spec.Template.Spec.Containers[0].Args = []string{
@@ -363,15 +391,6 @@ var _ = Describe("Ensurer", func() {
 		})
 
 		It("should not mutate deployment when kube-apiserver container is not found", func() {
-			webhookSecret := &corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      constants.AuditWebhookKubeConfigSecretName,
-					Namespace: namespace,
-				},
-				Data: map[string][]byte{
-					"kubeconfig": []byte("test-kubeconfig-data"),
-				},
-			}
 			Expect(fakeClient.Create(ctx, webhookSecret)).To(Succeed())
 
 			deployment.Spec.Template.Spec.Containers = []corev1.Container{

@@ -20,7 +20,7 @@ import (
 	"github.com/gardener/gardener-extension-auditing/pkg/apis/config/v1alpha1"
 	"github.com/gardener/gardener-extension-auditing/pkg/apis/config/validation"
 	auditcontroller "github.com/gardener/gardener-extension-auditing/pkg/controller/audit"
-	kapiwebhook "github.com/gardener/gardener-extension-auditing/pkg/webhook/kapiserver"
+	apiserverwebhook "github.com/gardener/gardener-extension-auditing/pkg/webhook/apiserver"
 )
 
 var (
@@ -99,6 +99,6 @@ func ControllerSwitches() *cmd.SwitchOptions {
 // WebhookSwitchOptions are the webhookcmd.SwitchOptions for the audit webhook.
 func WebhookSwitchOptions() *extensionscmdwebhook.SwitchOptions {
 	return extensionscmdwebhook.NewSwitchOptions(
-		extensionscmdwebhook.Switch(kapiwebhook.WebhookName, kapiwebhook.AddToManager),
+		extensionscmdwebhook.Switch(apiserverwebhook.WebhookName, apiserverwebhook.AddToManager),
 	)
 }

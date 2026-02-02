@@ -11,15 +11,19 @@ import (
 	extensionscontroller "github.com/gardener/gardener/extensions/pkg/controller"
 	extensionsheartbeatcontroller "github.com/gardener/gardener/extensions/pkg/controller/heartbeat"
 	"github.com/gardener/gardener/extensions/pkg/util"
-	extensionsv1alpha1 "github.com/gardener/gardener/pkg/apis/extensions/v1alpha1"
+	operatorv1alpha1 "github.com/gardener/gardener/pkg/apis/operator/v1alpha1"
 	gardenerhealthz "github.com/gardener/gardener/pkg/healthz"
+	"github.com/gardener/gardener/pkg/logger"
+	"github.com/go-logr/logr"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	monitoringv1alpha1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1alpha1"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	corev1 "k8s.io/api/core/v1"
 	componentbaseconfigv1alpha1 "k8s.io/component-base/config/v1alpha1"
 	"k8s.io/component-base/version"
 	"k8s.io/component-base/version/verflag"
+	"k8s.io/klog/v2"
 	"k8s.io/utils/clock"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
@@ -28,9 +32,8 @@ import (
 
 	auditinstall "github.com/gardener/gardener-extension-auditing/pkg/apis/auditing/install"
 	auditcontroller "github.com/gardener/gardener-extension-auditing/pkg/controller/audit"
+	apiserverwebhook "github.com/gardener/gardener-extension-auditing/pkg/webhook/apiserver"
 )
-
-var log = logf.Log.WithName("gardener-extension-auditing")
 
 // NewAuditControllerCommand creates a new command that is used to start the auditing service controller.
 func NewAuditControllerCommand() *cobra.Command {
@@ -38,11 +41,20 @@ func NewAuditControllerCommand() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:           "auditing",
-		Short:         "Audit controller manages audit logging within a shoot.",
+		Short:         "Audit controller manages audit logging within a shoot or garden.",
 		SilenceErrors: true,
 
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			verflag.PrintAndExitIfRequested()
+
+			logLevel, logFormat := "info", "json"
+			log, err := logger.NewZapLogger(logLevel, logFormat)
+			if err != nil {
+				return fmt.Errorf("error instantiating zap logger: %w", err)
+			}
+
+			logf.SetLogger(log)
+			klog.SetLogger(log)
 
 			log.Info("Starting audit", "version", version.Get())
 
@@ -50,11 +62,15 @@ func NewAuditControllerCommand() *cobra.Command {
 				return fmt.Errorf("error completing options: %w", err)
 			}
 
+			cmd.Flags().VisitAll(func(flag *pflag.Flag) {
+				log.Info("Flag", "name", flag.Name, "value", flag.Value, "default", flag.DefValue)
+			})
+
 			if err := options.heartbeatOptions.Validate(); err != nil {
 				return err
 			}
 			cmd.SilenceUsage = true
-			return options.run(cmd.Context())
+			return options.run(cmd.Context(), log)
 		},
 	}
 
@@ -64,7 +80,7 @@ func NewAuditControllerCommand() *cobra.Command {
 	return cmd
 }
 
-func (o *Options) run(ctx context.Context) error {
+func (o *Options) run(ctx context.Context, log logr.Logger) error {
 	// TODO: Make these flags configurable via command line parameters or component config file.
 	util.ApplyClientConnectionConfigurationToRESTConfig(&componentbaseconfigv1alpha1.ClientConnectionConfiguration{
 		QPS:   100.0,
@@ -72,6 +88,7 @@ func (o *Options) run(ctx context.Context) error {
 	}, o.restOptions.Completed().Config)
 
 	mgrOpts := o.managerOptions.Completed().Options()
+	mgrOpts.Logger = log
 
 	mgrOpts.Client = client.Options{
 		Cache: &client.CacheOptions{
@@ -85,6 +102,10 @@ func (o *Options) run(ctx context.Context) error {
 	mgr, err := manager.New(o.restOptions.Completed().Config, mgrOpts)
 	if err != nil {
 		return fmt.Errorf("could not instantiate controller-manager: %w", err)
+	}
+
+	if err := operatorv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
+		return fmt.Errorf("could not update manager scheme: %s", err)
 	}
 
 	if err := extensionscontroller.AddToScheme(mgr.GetScheme()); err != nil {
@@ -105,8 +126,10 @@ func (o *Options) run(ctx context.Context) error {
 	ctrlConfig := o.auditOptions.Completed()
 	ctrlConfig.Apply(&auditcontroller.DefaultAddOptions.Config)
 	o.controllerOptions.Completed().Apply(&auditcontroller.DefaultAddOptions.ControllerOptions)
-	o.reconcileOptions.Completed().Apply(&auditcontroller.DefaultAddOptions.IgnoreOperationAnnotation, &[]extensionsv1alpha1.ExtensionClass{extensionsv1alpha1.ExtensionClassShoot})
+	o.reconcileOptions.Completed().Apply(&auditcontroller.DefaultAddOptions.IgnoreOperationAnnotation, &auditcontroller.DefaultAddOptions.ExtensionClasses)
 	o.heartbeatOptions.Completed().Apply(&extensionsheartbeatcontroller.DefaultAddOptions)
+
+	apiserverwebhook.DefaultAddOptions.ExtensionClasses = o.reconcileOptions.Completed().ExtensionClasses
 
 	if err := o.controllerSwitches.Completed().AddToManager(ctx, mgr); err != nil {
 		return fmt.Errorf("could not add controllers to manager: %w", err)

@@ -8,6 +8,7 @@ import (
 	"context"
 
 	"github.com/gardener/gardener/extensions/pkg/controller/extension"
+	extensionsv1alpha1 "github.com/gardener/gardener/pkg/apis/extensions/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -37,6 +38,8 @@ type AddOptions struct {
 	Config config.Configuration
 	// IgnoreOperationAnnotation specifies whether to ignore the operation annotation or not.
 	IgnoreOperationAnnotation bool
+	// ExtensionClasses contains the extension classes the controller should reconcile.
+	ExtensionClasses []extensionsv1alpha1.ExtensionClass
 }
 
 // AddToManager adds a controller with the default Options to the given Controller Manager.
@@ -50,12 +53,13 @@ func AddToManagerWithOptions(ctx context.Context, mgr manager.Manager, opts AddO
 	decoder := serializer.NewCodecFactory(mgr.GetScheme(), serializer.EnableStrict).UniversalDecoder()
 
 	return extension.Add(mgr, extension.AddArgs{
+		ExtensionClasses:  opts.ExtensionClasses,
 		Actuator:          NewActuator(mgr.GetClient(), mgr.GetAPIReader(), decoder, opts.Config),
 		ControllerOptions: opts.ControllerOptions,
 		Name:              ControllerName,
 		FinalizerSuffix:   FinalizerSuffix,
 		Resync:            0,
-		Predicates:        extension.DefaultPredicates(ctx, mgr, DefaultAddOptions.IgnoreOperationAnnotation),
+		Predicates:        extension.DefaultPredicates(ctx, mgr, opts.IgnoreOperationAnnotation),
 		Type:              Type,
 	})
 }

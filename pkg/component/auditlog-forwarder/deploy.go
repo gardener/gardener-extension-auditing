@@ -12,6 +12,7 @@ import (
 	forwarderconfigv1alpha1 "github.com/gardener/auditlog-forwarder/pkg/apis/config/v1alpha1"
 	extensionssecretsmanager "github.com/gardener/gardener/extensions/pkg/util/secret/manager"
 	v1beta1constants "github.com/gardener/gardener/pkg/apis/core/v1beta1/constants"
+	extensionsv1alpha1 "github.com/gardener/gardener/pkg/apis/extensions/v1alpha1"
 	resourcesv1alpha1 "github.com/gardener/gardener/pkg/apis/resources/v1alpha1"
 	"github.com/gardener/gardener/pkg/client/kubernetes"
 	"github.com/gardener/gardener/pkg/component"
@@ -49,48 +50,19 @@ const (
 	ManagedResourceName = "extension-auditing"
 )
 
-// ShootMetadata contains identifying information about a Gardener shoot cluster.
-// This metadata is used to enrich audit logs with context about which shoot
-// cluster generated the audit events.
-type ShootMetadata struct {
-	// ID is the unique identifier of the shoot cluster.
-	ID string
-	// Name is the name of the shoot cluster.
-	Name string
-	// Namespace is namespace of the shoot cluster.
-	Namespace string
-}
-
-// SeedMetadata contains identifying information about a Gardener seed cluster.
-// This metadata provides context about which seed cluster is hosting the shoot
-// that generated the audit events.
-type SeedMetadata struct {
-	// ID is the unique identifier of the seed cluster.
-	ID string
-	// Name is the name of the seed cluster.
-	Name string
-}
-
-// GardenerMetadata aggregates metadata about both the shoot and seed clusters.
-// This combined metadata is injected into audit logs to provide full context
-// about the Gardener environment where the audit events originated.
-type GardenerMetadata struct {
-	// ShootMetadata contains information about the shoot cluster.
-	ShootMetadata ShootMetadata
-	// SeedMetadata contains information about the seed cluster hosting the shoot.
-	SeedMetadata SeedMetadata
-}
-
 // Values is a set of configuration values for the auditing service.
 type Values struct {
 	// Image is the container image to use for the auditlog-forwarder.
 	Image string
 
-	// Metadata is additional info that is going to be used to enrich the collected logs.
-	Metadata GardenerMetadata
+	// MetadataAnnotations are annotations that are going to be used to enrich the collected logs.
+	MetadataAnnotations map[string]string
 
 	// AuditOutputs is a list of audit backends that will be used by auditlog-forwarder to send events to.
 	AuditOutputs []Output
+
+	// ExtensionClass is the class of the extension (e.g., "shoot" or "garden").
+	ExtensionClass extensionsv1alpha1.ExtensionClass
 }
 
 // Output defines a destination where audit events will be forwarded.
@@ -217,6 +189,17 @@ func (r *AuditlogForwarder) WaitCleanup(ctx context.Context) error {
 }
 
 func (r *AuditlogForwarder) computeResourcesData(generatedSecrets map[string]*corev1.Secret, caBundle *corev1.Secret) (map[string][]byte, error) {
+	var (
+		priorityClassName = v1beta1constants.PriorityClassNameShootControlPlane500
+		// TODO metrics handling
+		// allScrapeTargetsFn       = gutil.InjectNetworkPolicyAnnotationsForScrapeTargets
+		// serviceMonitorObjectMeta = monitoringutils.ConfigObjectMeta(constants.ApplicationName, namespace, "shoot")
+	)
+
+	if r.values.ExtensionClass == extensionsv1alpha1.ExtensionClassGarden {
+		priorityClassName = v1beta1constants.PriorityClassNameGardenSystem500
+	}
+
 	forwarderConfiguration := forwarderconfigv1alpha1.AuditlogForwarder{
 		Server: forwarderconfigv1alpha1.Server{
 			Port: 10443,
@@ -227,13 +210,7 @@ func (r *AuditlogForwarder) computeResourcesData(generatedSecrets map[string]*co
 				ClientCAFile: "/etc/auditlog-forwarder/ca/ca.crt",
 			},
 		},
-		InjectAnnotations: map[string]string{
-			"shoot.gardener.cloud/name":      r.values.Metadata.ShootMetadata.Name,
-			"shoot.gardener.cloud/namespace": r.values.Metadata.ShootMetadata.Namespace,
-			"shoot.gardener.cloud/id":        r.values.Metadata.ShootMetadata.ID,
-			"seed.gardener.cloud/name":       r.values.Metadata.SeedMetadata.Name,
-			"seed.gardener.cloud/id":         r.values.Metadata.SeedMetadata.ID,
-		},
+		InjectAnnotations: r.values.MetadataAnnotations,
 	}
 
 	for _, output := range r.values.AuditOutputs {
@@ -302,7 +279,7 @@ func (r *AuditlogForwarder) computeResourcesData(generatedSecrets map[string]*co
 				Spec: corev1.PodSpec{
 					ServiceAccountName:           constants.AuditlogForwarder,
 					AutomountServiceAccountToken: ptr.To(false),
-					PriorityClassName:            v1beta1constants.PriorityClassNameShootControlPlane500,
+					PriorityClassName:            priorityClassName,
 					Affinity: &corev1.Affinity{
 						PodAntiAffinity: &corev1.PodAntiAffinity{
 							PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{{

@@ -34,7 +34,11 @@ spec:
         networking.gardener.cloud/to-dns: allowed
         networking.resources.gardener.cloud/to-all-shoots-kube-apiserver-tcp-443: allowed
     spec:
+      {{- if .Values.gardener.runtimeCluster.enabled }}
+      priorityClassName: {{ .Values.gardener.runtimeCluster.priorityClassName }}
+      {{- else }}
       priorityClassName: gardener-system-900
+      {{- end }}
       serviceAccountName: {{ include "name" . }}
       containers:
       - name: {{ include "name" . }}
@@ -55,12 +59,19 @@ spec:
         - --metrics-bind-address=:{{ .Values.metrics.port }}
         {{- end }}
         - --health-bind-address=:{{ .Values.healthPort }}
+        {{- if .Values.gardener.runtimeCluster.enabled }}
+        - --extension-classes=garden
+        {{- else }}
+        - --extension-classes=shoot
+        {{- end }}
         - --gardener-version={{ .Values.gardener.version }}
         env:
         - name: LEADER_ELECTION_NAMESPACE
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
+        - name: WEBHOOK_CONFIG_NAMESPACE
+          value: {{ .Release.Namespace }}
         {{- if .Values.imageVectorOverwrite }}
         - name: IMAGEVECTOR_OVERWRITE
           value: /charts_overwrite/images_overwrite.yaml

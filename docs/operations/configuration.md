@@ -1,27 +1,34 @@
 ---
-title: Configuring the Auditing Extension
-description: Learn how to enable audit log forwarding for Shoot clusters
+title: Configuring the Auditing Extension (Garden)
+description: Learn how to enable audit log forwarding for Garden clusters
 ---
 
-# Configuring the Auditing Extension for Shoot Clusters
+# Configuring the Auditing Extension for Garden Clusters
 
-## Shoot Configuration
+> [!NOTE]
+>
+> For Shoot cluster configuration, see the [usage documentation](../usage/configuration.md).
+
+## Garden Configuration
 
 ### Enabling the extension
 
-The extension is not globally enabled and must be configured per Shoot:
+To enable audit log forwarding for a Garden cluster:
 
-1. Configure an [Audit Policy](https://github.com/gardener/gardener/blob/master/docs/usage/security/shoot_auditpolicy.md) for the Shoot cluster's kube-apiserver
+1. Configure an [Audit Policy](https://github.com/gardener/gardener/blob/master/docs/usage/security/shoot_auditpolicy.md) for the Garden's virtual cluster `kube-apiserver` and `gardener-apiserver`. Note, the two API servers are handling different APIs respectively each of them has own specific audit policy scoped to the served resources.
 2. Add an entry of type `auditing` under `spec.extensions` with a `providerConfig` of kind `AuditConfiguration`
+
+> [!CAUTION]
+>
+> As of now the extension configuration is not validated when applied to the Garden object. Operators should treat with extra caution.
 
 Minimal example:
 
 ```yaml
-apiVersion: core.gardener.cloud/v1beta1
-kind: Shoot
+apiVersion: operator.gardener.cloud/v1alpha1
+kind: Garden
 metadata:
-  name: crazy-botany
-  namespace: garden-dev
+  name: garden
 spec:
   extensions:
   - type: auditing
@@ -39,19 +46,26 @@ spec:
       apiVersion: v1
       kind: Secret
       name: mtls-credentials
-  kubernetes:
-    kubeAPIServer:
-      auditConfig:
-        auditPolicy:
-          configMapRef:
-            name: audit-policy
-    # ... other configuration ...
+  virtualCluster:
+    kubernetes:
+      kubeAPIServer:
+        auditConfig:
+          auditPolicy:
+            configMapRef:
+                name: audit-policy
+    gardener:
+      gardenerAPIServer:
+        auditConfig:
+          auditPolicy:
+            configMapRef:
+              name: audit-policy-garden
+        # ... other configuration ...
 ---
 apiVersion: v1
 kind: Secret
 metadata:
   name: mtls-credentials
-  namespace: garden-dev
+  namespace: garden
 data:
   ca.crt: <base64 PEM encoded CA bundle to validate server certificates> # optional, if not set root CAs will be used
   client.crt: <base64 PEM encoded client certificate>

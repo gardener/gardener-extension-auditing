@@ -5,18 +5,7 @@ metadata:
   name: extension
 build:
   insecureRegistries:
-    - garden.local.gardener.cloud:5001
-  tagPolicy:
-    customTemplate:
-      template: "{{.version}}-{{.sha}}"
-      components:
-        - name: version
-          envTemplate:
-            template: "{{.EXTENSION_VERSION}}"
-        # inputDigest is used to inject a digest of the artifact source into the built image tag
-        # and therefore into the SKAFFOLD_IMAGE environment variable which is used when generating the corresponding ControllerDeployment
-        - name: sha
-          inputDigest: {}
+    - registry.local.gardener.cloud:5001
   artifacts:
     - image: local-skaffold/gardener-extension-auditing
       ko:
@@ -38,7 +27,7 @@ build:
             - pkg/constants
             - pkg/controller/audit
             - pkg/secrets
-            - pkg/webhook/kapiserver
+            - pkg/webhook/apiserver
             - VERSION
         ldflags:
           - '{{.LD_FLAGS}}'
@@ -122,7 +111,7 @@ build:
           - '{{.LD_FLAGS}}'
         main: ./cmd/gardener-extension-auditing-admission
   insecureRegistries:
-    - garden.local.gardener.cloud:5001
+    - registry.local.gardener.cloud:5001
 deploy:
   helm:
     releases:

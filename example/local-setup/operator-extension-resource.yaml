@@ -6,7 +6,10 @@ metadata:
     security.gardener.cloud/pod-security-enforce: baseline
 spec:
   resources:
-  - kind: Extension
+  - clusterCompatibility:
+    - garden
+    - shoot
+    kind: Extension
     type: auditing
     workerlessSupported: true
     lifecycle:
