@@ -20,29 +20,62 @@ jobs:
     permissions:
       contents: read
 
-  sast-lint:
-    uses: gardener/cc-utils/.github/workflows/sastlint-ocm.yaml@master
+  verify:
+    runs-on: ubuntu-latest
     permissions:
       contents: read
-    with:
-      setup-git-identity: true
-      linter: gosec
-      run: |
-        set -euo pipefail
-        if [ '${{ inputs.mode }}' == 'release' ]; then
-          make verify-extended
-          # verify-extended depends on `sast-report` target, which generates `gosec-report.sarif`
-        else
-          # tests are run using prow for non-release-runs, so early-exit
-          echo "dummy" > gosec-report.sarif
-        fi
-      go-version: '1.25.1'
+    steps:
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+      - uses: actions/checkout@v4
+      - uses: gardener/cc-utils/.github/actions/setup-git-identity@master
+      - name: run-verify
+        run: |
+          set -o errexit
+          set -o nounset
+          set -o pipefail
+
+          mkdir -p /tmp/blobs.d
+          make verify-extended |& tee /tmp/blobs.d/verify-log.txt
+          # verify calls `make sast-report`, which generates `gosec-report.sarif`
+          tar czf /tmp/blobs.d/gosec-report.tar.gz gosec-report.sarif
+          tar czf /tmp/blobs.d/verify-log.tar.gz -C /tmp/blobs.d verify-log.txt
+      - name: add-reports-to-component-descriptor
+        uses: gardener/cc-utils/.github/actions/export-ocm-fragments@master
+        with:
+          blobs-directory: /tmp/blobs.d
+          ocm-resources: |
+            - name: gosec-report
+              relation: local
+              access:
+                type: localBlob
+                localReference: gosec-report.tar.gz
+              labels:
+                - name: gardener.cloud/purposes
+                  value:
+                    - lint
+                    - sast
+                    - gosec
+                - name: gardener.cloud/comment
+                  value: |
+                    we use gosec (linter) for SAST scans
+                    see: https://github.com/securego/gosec
+            - name: test-results
+              relation: local
+              access:
+                type: localBlob
+                localReference: verify-log.tar.gz
+              labels:
+                - name: gardener.cloud/purposes
+                  value:
+                    - test
 
   oci-images:
     name: Build OCI-Images
     needs:
       - prepare
-      - sast-lint
+      - verify
     permissions:
       contents: read
       packages: write
@@ -66,6 +99,19 @@ jobs:
       oci-repository: ${{ matrix.args.oci-repository }}
       oci-platforms: linux/amd64,linux/arm64
       extra-tags: latest
+
+  oci-images-summary:
+    name: OCI Images Summary
+    runs-on: ubuntu-latest
+    needs:
+    - oci-images
+    if: ${{ always() }}  # Ensures this job runs even if the matrix partially fails
+    permissions:
+      contents: read
+    steps:
+      - name: Fail if OCI matrix failed
+        if: ${{ needs.oci-images.result != 'success' }}
+        run: exit 1
 
   helmcharts:
     name: Build Helmcharts
@@ -110,3 +156,16 @@ jobs:
       oci-registry: ${{ needs.prepare.outputs.oci-registry }}
       oci-repository: ${{ matrix.args.oci-repository }}
       ocm-mappings: ${{ toJSON(matrix.args.ocm-mappings) }}
+
+  helmcharts-summary:
+    name: Helm Charts Summary
+    runs-on: ubuntu-latest
+    needs:
+    - helmcharts
+    if: ${{ always() }}  # Ensures this job runs even if the matrix partially fails
+    permissions:
+      contents: read
+    steps:
+      - name: Fail if Helm Charts matrix failed
+        if: ${{ needs.helmcharts.result != 'success' }}
+        run: exit 1
