@@ -5,6 +5,7 @@
 package apiserver
 
 import (
+	"errors"
 	"slices"
 
 	extensionswebhook "github.com/gardener/gardener/extensions/pkg/webhook"
@@ -43,6 +44,10 @@ type AddOptions struct {
 
 // AddToManager creates a webhook with the default options and adds it to the manager.
 func AddToManager(mgr manager.Manager) (*extensionswebhook.Webhook, error) {
+	if len(DefaultAddOptions.ExtensionClasses) > 1 {
+		return nil, errors.New("only a single extension class is supported at a time")
+	}
+
 	logger.Info("Adding webhook to manager")
 
 	// We support only a single class simultaneously.
