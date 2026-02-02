@@ -53,7 +53,6 @@ func NewAuditControllerCommand() *cobra.Command {
 				return fmt.Errorf("error instantiating zap logger: %w", err)
 			}
 
-			log = log.WithName("gardener-extension-auditing") // TODO: do we need to name the logger?
 			logf.SetLogger(log)
 			klog.SetLogger(log)
 
