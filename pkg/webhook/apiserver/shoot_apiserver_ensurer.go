@@ -96,8 +96,8 @@ func (e *shootAPIServerEnsurer) EnsureKubeAPIServerDeployment(ctx context.Contex
 	return nil
 }
 
-// NewEnsurer creates a new auditing mutator.
-func NewEnsurer(c client.Client, logger logr.Logger) genericmutator.Ensurer {
+// NewShootAPIServerEnsurer creates a new shoot API server ensurer.
+func NewShootAPIServerEnsurer(c client.Client, logger logr.Logger) genericmutator.Ensurer {
 	return &shootAPIServerEnsurer{
 		logger: logger.WithName("auditing-controlplane-ensurer"),
 		client: c,

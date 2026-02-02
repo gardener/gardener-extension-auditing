@@ -169,7 +169,7 @@ var _ = Describe("Ensurer", func() {
 				},
 			}
 
-			ensurer = apiserver.NewEnsurer(fakeClient, logger)
+			ensurer = apiserver.NewShootAPIServerEnsurer(fakeClient, logger)
 			gctx = &mockGardenContext{}
 		})
 

@@ -68,7 +68,7 @@ func AddToManager(mgr manager.Manager) (*extensionswebhook.Webhook, error) {
 
 		mutator = genericmutator.NewMutator(
 			mgr,
-			NewEnsurer(mgr.GetClient(), logger),
+			NewShootAPIServerEnsurer(mgr.GetClient(), logger),
 			oscutils.NewUnitSerializer(),
 			kubelet.NewConfigCodec(fciCodec),
 			fciCodec,
