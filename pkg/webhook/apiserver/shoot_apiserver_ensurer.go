@@ -25,7 +25,7 @@ import (
 	"github.com/gardener/gardener-extension-auditing/pkg/constants"
 )
 
-type ensurer struct {
+type shootAPIServerEnsurer struct {
 	genericmutator.NoopEnsurer
 	client client.Client
 	logger logr.Logger
@@ -36,7 +36,7 @@ type ensurer struct {
 var NewSecretsManager = extensionssecretsmanager.SecretsManagerForCluster
 
 // EnsureKubeAPIServerDeployment ensures that the kube-apiserver deployment conforms to the auditlog-proxy requirements.
-func (e *ensurer) EnsureKubeAPIServerDeployment(ctx context.Context, gctx extensionscontextwebhook.GardenContext, newDeployment, _ *appsv1.Deployment) error {
+func (e *shootAPIServerEnsurer) EnsureKubeAPIServerDeployment(ctx context.Context, gctx extensionscontextwebhook.GardenContext, newDeployment, _ *appsv1.Deployment) error {
 	template := &newDeployment.Spec.Template
 	ps := &template.Spec
 
@@ -97,7 +97,7 @@ func (e *ensurer) EnsureKubeAPIServerDeployment(ctx context.Context, gctx extens
 
 // NewEnsurer creates a new auditing mutator.
 func NewEnsurer(c client.Client, logger logr.Logger) genericmutator.Ensurer {
-	return &ensurer{
+	return &shootAPIServerEnsurer{
 		logger: logger.WithName("auditing-controlplane-ensurer"),
 		client: c,
 	}
