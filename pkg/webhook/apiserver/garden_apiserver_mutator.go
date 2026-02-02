@@ -12,6 +12,7 @@ import (
 
 	extensionswebhook "github.com/gardener/gardener/extensions/pkg/webhook"
 	v1beta1constants "github.com/gardener/gardener/pkg/apis/core/v1beta1/constants"
+	extensionsv1alpha1 "github.com/gardener/gardener/pkg/apis/extensions/v1alpha1"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -48,7 +49,7 @@ func (m *GardenAPIServerMutator) Mutate(ctx context.Context, newObj, _ client.Ob
 
 	// As we do not rely on namespace labels to identify whether the auditing extension is
 	// installed, we need to check for the existence of the extension resource here.
-	extension, extensionError := getAuditingExtension(ctx, m.client, newDeployment.Namespace)
+	extension, extensionError := getAuditingExtension(ctx, m.client, newDeployment.Namespace, extensionsv1alpha1.ExtensionClassGarden)
 	if extensionError != nil {
 		return extensionError
 	}

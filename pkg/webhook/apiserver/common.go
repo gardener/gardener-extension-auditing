@@ -13,6 +13,7 @@ import (
 	extensionswebhook "github.com/gardener/gardener/extensions/pkg/webhook"
 	extensionsv1alpha1 "github.com/gardener/gardener/pkg/apis/extensions/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/gardener/gardener-extension-auditing/pkg/constants"
@@ -42,14 +43,15 @@ const (
 	auditWebhookConfigVolumeName = "audit-webhook-kubeconfig" // #nosec G101
 )
 
-func getAuditingExtension(ctx context.Context, c client.Client, namespace string) (*extensionsv1alpha1.Extension, error) {
+func getAuditingExtension(ctx context.Context, c client.Client, namespace string, class extensionsv1alpha1.ExtensionClass) (*extensionsv1alpha1.Extension, error) {
 	extensions := extensionsv1alpha1.ExtensionList{}
 	if err := c.List(ctx, &extensions, client.InNamespace(namespace)); err != nil {
 		return nil, err
 	}
 
 	for _, extension := range extensions.Items {
-		if extension.Spec.Type == constants.ExtensionType {
+		extensionClass := ptr.Deref(extension.Spec.Class, extensionsv1alpha1.ExtensionClassShoot)
+		if extension.Spec.Type == constants.ExtensionType && extensionClass == class {
 			return &extension, nil
 		}
 	}

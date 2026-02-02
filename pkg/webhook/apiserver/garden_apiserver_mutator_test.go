@@ -18,6 +18,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	fakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -86,6 +87,9 @@ var _ = Describe("GardenAPIServerMutator", func() {
 				}
 			}
 		}
+
+		extension     *extensionsv1alpha1.Extension
+		webhookSecret *corev1.Secret
 	)
 
 	BeforeEach(func() {
@@ -108,6 +112,28 @@ var _ = Describe("GardenAPIServerMutator", func() {
 		}
 
 		fakeClient = fakeclient.NewClientBuilder().WithScheme(kubernetes.SeedScheme).Build()
+
+		extension = &extensionsv1alpha1.Extension{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "auditing-ext",
+				Namespace: namespace,
+			},
+			Spec: extensionsv1alpha1.ExtensionSpec{
+				DefaultSpec: extensionsv1alpha1.DefaultSpec{
+					Type:  constants.ExtensionType,
+					Class: ptr.To(extensionsv1alpha1.ExtensionClassGarden),
+				},
+			},
+		}
+		webhookSecret = &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      constants.AuditWebhookKubeConfigSecretName,
+				Namespace: namespace,
+			},
+			Data: map[string][]byte{
+				"kubeconfig": []byte("test-kubeconfig-data"),
+			},
+		}
 	})
 
 	Describe("#Mutate", func() {
@@ -146,15 +172,26 @@ var _ = Describe("GardenAPIServerMutator", func() {
 		})
 
 		It("should skip mutation when extension does not exist", func() {
-			webhookSecret := &corev1.Secret{
+			Expect(fakeClient.Create(ctx, webhookSecret)).To(Succeed())
+
+			Expect(mutator.Mutate(ctx, deployment, nil)).To(Succeed())
+			checkDeploymentIsNotMutated(deployment)
+		})
+
+		It("should skip mutation when extension has wrong class", func() {
+			extensionWithWrongClass := &extensionsv1alpha1.Extension{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      constants.AuditWebhookKubeConfigSecretName,
+					Name:      "auditing-ext",
 					Namespace: namespace,
 				},
-				Data: map[string][]byte{
-					"kubeconfig": []byte("test-kubeconfig-data"),
+				Spec: extensionsv1alpha1.ExtensionSpec{
+					DefaultSpec: extensionsv1alpha1.DefaultSpec{
+						Type:  constants.ExtensionType,
+						Class: ptr.To(extensionsv1alpha1.ExtensionClassShoot),
+					},
 				},
 			}
+			Expect(fakeClient.Create(ctx, extensionWithWrongClass)).To(Succeed())
 			Expect(fakeClient.Create(ctx, webhookSecret)).To(Succeed())
 
 			Expect(mutator.Mutate(ctx, deployment, nil)).To(Succeed())
@@ -162,30 +199,10 @@ var _ = Describe("GardenAPIServerMutator", func() {
 		})
 
 		It("should skip mutation when extension is being deleted", func() {
-			extension := &extensionsv1alpha1.Extension{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:       "auditing-ext",
-					Namespace:  namespace,
-					Finalizers: []string{"stop-deletion"},
-				},
-				Spec: extensionsv1alpha1.ExtensionSpec{
-					DefaultSpec: extensionsv1alpha1.DefaultSpec{
-						Type: constants.ExtensionType,
-					},
-				},
-			}
+			extension.Finalizers = []string{"stop-deletion"}
 			Expect(fakeClient.Create(ctx, extension)).To(Succeed())
 			Expect(fakeClient.Delete(ctx, extension)).To(Succeed())
 
-			webhookSecret := &corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      constants.AuditWebhookKubeConfigSecretName,
-					Namespace: namespace,
-				},
-				Data: map[string][]byte{
-					"kubeconfig": []byte("test-kubeconfig-data"),
-				},
-			}
 			Expect(fakeClient.Create(ctx, webhookSecret)).To(Succeed())
 
 			Expect(mutator.Mutate(ctx, deployment, nil)).To(Succeed())
@@ -194,28 +211,7 @@ var _ = Describe("GardenAPIServerMutator", func() {
 		})
 
 		It("should add audit webhook configuration when extension and secret exist", func() {
-			extension := &extensionsv1alpha1.Extension{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "auditing-ext",
-					Namespace: namespace,
-				},
-				Spec: extensionsv1alpha1.ExtensionSpec{
-					DefaultSpec: extensionsv1alpha1.DefaultSpec{
-						Type: constants.ExtensionType,
-					},
-				},
-			}
 			Expect(fakeClient.Create(ctx, extension)).To(Succeed())
-
-			webhookSecret := &corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      constants.AuditWebhookKubeConfigSecretName,
-					Namespace: namespace,
-				},
-				Data: map[string][]byte{
-					"kubeconfig": []byte("test-kubeconfig-data"),
-				},
-			}
 			Expect(fakeClient.Create(ctx, webhookSecret)).To(Succeed())
 
 			Expect(mutator.Mutate(ctx, deployment, nil)).To(Succeed())
@@ -223,17 +219,6 @@ var _ = Describe("GardenAPIServerMutator", func() {
 		})
 
 		It("should add secret hash annotation to deployment when secret exists", func() {
-			extension := &extensionsv1alpha1.Extension{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "auditing-ext",
-					Namespace: namespace,
-				},
-				Spec: extensionsv1alpha1.ExtensionSpec{
-					DefaultSpec: extensionsv1alpha1.DefaultSpec{
-						Type: constants.ExtensionType,
-					},
-				},
-			}
 			Expect(fakeClient.Create(ctx, extension)).To(Succeed())
 
 			kubeconfigData := []byte("test-kubeconfig-data")
@@ -261,17 +246,6 @@ var _ = Describe("GardenAPIServerMutator", func() {
 		})
 
 		It("should handle empty kubeconfig data in secret", func() {
-			extension := &extensionsv1alpha1.Extension{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "auditing-ext",
-					Namespace: namespace,
-				},
-				Spec: extensionsv1alpha1.ExtensionSpec{
-					DefaultSpec: extensionsv1alpha1.DefaultSpec{
-						Type: constants.ExtensionType,
-					},
-				},
-			}
 			Expect(fakeClient.Create(ctx, extension)).To(Succeed())
 
 			webhookSecret := &corev1.Secret{
@@ -294,28 +268,7 @@ var _ = Describe("GardenAPIServerMutator", func() {
 		})
 
 		It("should mutate both kube-apiserver and gardener-apiserver containers", func() {
-			extension := &extensionsv1alpha1.Extension{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "auditing-ext",
-					Namespace: namespace,
-				},
-				Spec: extensionsv1alpha1.ExtensionSpec{
-					DefaultSpec: extensionsv1alpha1.DefaultSpec{
-						Type: constants.ExtensionType,
-					},
-				},
-			}
 			Expect(fakeClient.Create(ctx, extension)).To(Succeed())
-
-			webhookSecret := &corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      constants.AuditWebhookKubeConfigSecretName,
-					Namespace: namespace,
-				},
-				Data: map[string][]byte{
-					"kubeconfig": []byte("test-kubeconfig-data"),
-				},
-			}
 			Expect(fakeClient.Create(ctx, webhookSecret)).To(Succeed())
 
 			deployment.Spec.Template.Spec.Containers = append(deployment.Spec.Template.Spec.Containers, corev1.Container{
@@ -327,28 +280,7 @@ var _ = Describe("GardenAPIServerMutator", func() {
 		})
 
 		It("should modify existing audit webhook elements", func() {
-			extension := &extensionsv1alpha1.Extension{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "auditing-ext",
-					Namespace: namespace,
-				},
-				Spec: extensionsv1alpha1.ExtensionSpec{
-					DefaultSpec: extensionsv1alpha1.DefaultSpec{
-						Type: constants.ExtensionType,
-					},
-				},
-			}
 			Expect(fakeClient.Create(ctx, extension)).To(Succeed())
-
-			webhookSecret := &corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      constants.AuditWebhookKubeConfigSecretName,
-					Namespace: namespace,
-				},
-				Data: map[string][]byte{
-					"kubeconfig": []byte("test-kubeconfig-data"),
-				},
-			}
 			Expect(fakeClient.Create(ctx, webhookSecret)).To(Succeed())
 
 			// Add some existing audit webhook args with different values
@@ -362,28 +294,7 @@ var _ = Describe("GardenAPIServerMutator", func() {
 		})
 
 		It("should remove audit flags from command field", func() {
-			extension := &extensionsv1alpha1.Extension{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "auditing-ext",
-					Namespace: namespace,
-				},
-				Spec: extensionsv1alpha1.ExtensionSpec{
-					DefaultSpec: extensionsv1alpha1.DefaultSpec{
-						Type: constants.ExtensionType,
-					},
-				},
-			}
 			Expect(fakeClient.Create(ctx, extension)).To(Succeed())
-
-			webhookSecret := &corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      constants.AuditWebhookKubeConfigSecretName,
-					Namespace: namespace,
-				},
-				Data: map[string][]byte{
-					"kubeconfig": []byte("test-kubeconfig-data"),
-				},
-			}
 			Expect(fakeClient.Create(ctx, webhookSecret)).To(Succeed())
 
 			deployment.Spec.Template.Spec.Containers[0].Command = []string{
@@ -404,28 +315,7 @@ var _ = Describe("GardenAPIServerMutator", func() {
 		})
 
 		It("should preserve audit-policy-file flag when mutating", func() {
-			extension := &extensionsv1alpha1.Extension{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "auditing-ext",
-					Namespace: namespace,
-				},
-				Spec: extensionsv1alpha1.ExtensionSpec{
-					DefaultSpec: extensionsv1alpha1.DefaultSpec{
-						Type: constants.ExtensionType,
-					},
-				},
-			}
 			Expect(fakeClient.Create(ctx, extension)).To(Succeed())
-
-			webhookSecret := &corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      constants.AuditWebhookKubeConfigSecretName,
-					Namespace: namespace,
-				},
-				Data: map[string][]byte{
-					"kubeconfig": []byte("test-kubeconfig-data"),
-				},
-			}
 			Expect(fakeClient.Create(ctx, webhookSecret)).To(Succeed())
 
 			deployment.Spec.Template.Spec.Containers[0].Args = []string{
@@ -457,7 +347,8 @@ var _ = Describe("GardenAPIServerMutator", func() {
 				},
 				Spec: extensionsv1alpha1.ExtensionSpec{
 					DefaultSpec: extensionsv1alpha1.DefaultSpec{
-						Type: constants.ExtensionType,
+						Type:  constants.ExtensionType,
+						Class: ptr.To(extensionsv1alpha1.ExtensionClassGarden),
 					},
 				},
 			}
@@ -481,16 +372,6 @@ var _ = Describe("GardenAPIServerMutator", func() {
 				},
 			}
 			Expect(fakeClient.Create(ctx, extension)).To(Succeed())
-
-			webhookSecret := &corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      constants.AuditWebhookKubeConfigSecretName,
-					Namespace: namespace,
-				},
-				Data: map[string][]byte{
-					"kubeconfig": []byte("test-kubeconfig-data"),
-				},
-			}
 			Expect(fakeClient.Create(ctx, webhookSecret)).To(Succeed())
 
 			deployment.Spec.Template.Spec.Containers = []corev1.Container{

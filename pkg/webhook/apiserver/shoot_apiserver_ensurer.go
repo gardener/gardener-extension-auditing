@@ -15,6 +15,7 @@ import (
 	extensionscontextwebhook "github.com/gardener/gardener/extensions/pkg/webhook/context"
 	"github.com/gardener/gardener/extensions/pkg/webhook/controlplane/genericmutator"
 	v1beta1constants "github.com/gardener/gardener/pkg/apis/core/v1beta1/constants"
+	extensionsv1alpha1 "github.com/gardener/gardener/pkg/apis/extensions/v1alpha1"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -56,7 +57,7 @@ func (e *shootAPIServerEnsurer) EnsureKubeAPIServerDeployment(ctx context.Contex
 				return clusterErr
 			}
 
-			extension, extensionError := getAuditingExtension(ctx, e.client, newDeployment.Namespace)
+			extension, extensionError := getAuditingExtension(ctx, e.client, newDeployment.Namespace, extensionsv1alpha1.ExtensionClassShoot)
 			if extensionError != nil {
 				return extensionError
 			}
