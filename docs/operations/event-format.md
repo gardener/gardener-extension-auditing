@@ -1,5 +1,5 @@
 ---
-title: Audit Event Format (Garden)
+title: Event Format for Garden Clusters
 description: Learn about the format of audit events sent from Garden clusters
 ---
 

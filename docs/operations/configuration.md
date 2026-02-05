@@ -1,5 +1,5 @@
 ---
-title: Configuring the Auditing Extension (Garden)
+title: Configuration for Garden Clusters
 description: Learn how to enable audit log forwarding for Garden clusters
 ---
 

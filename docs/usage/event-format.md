@@ -1,9 +1,9 @@
 ---
-title: Audit Event Format
+title: Event Format for Shoot Clusters
 description: Learn about the format of audit events sent to backends and the custom annotations injected by Gardener
 ---
 
-# Audit Event Format
+# Audit Event Format for Shoot Clusters
 
 The auditing extension forwards Kubernetes audit events to the configured backends using the standard Kubernetes Audit API format. The kube-apiserver sends audit events as [EventList](https://kubernetes.io/docs/reference/config-api/apiserver-audit.v1/#audit-k8s-io-v1-EventList) objects (following the `audit.k8s.io/v1` API schema), where each EventList contains one or more [Event](https://kubernetes.io/docs/reference/config-api/apiserver-audit.v1/#audit-k8s-io-v1-Event) objects.
 
