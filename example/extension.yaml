@@ -10,15 +10,15 @@ spec:
       runtimeCluster:
         helm:
           ociRepository:
-            ref: europe-docker.pkg.dev/gardener-project/public/charts/gardener/extensions/auditing-admission-runtime:v0.2.0
+            ref: europe-docker.pkg.dev/gardener-project/public/charts/gardener/extensions/auditing-admission-runtime:v0.3.0-dev
       virtualCluster:
         helm:
           ociRepository:
-            ref: europe-docker.pkg.dev/gardener-project/public/charts/gardener/extensions/auditing-admission-application:v0.2.0
+            ref: europe-docker.pkg.dev/gardener-project/public/charts/gardener/extensions/auditing-admission-application:v0.3.0-dev
     extension:
       helm:
         ociRepository:
-          ref: europe-docker.pkg.dev/gardener-project/public/charts/gardener/extensions/auditing:v0.2.0
+          ref: europe-docker.pkg.dev/gardener-project/public/charts/gardener/extensions/auditing:v0.3.0-dev
   resources:
   - clusterCompatibility:
     - garden
