@@ -140,7 +140,9 @@ func (a *actuator) Reconcile(ctx context.Context, log logr.Logger, ex *extension
 		}
 		referencedResources = garden.Spec.Resources
 		gardenerMetadata = map[string]string{
-			"garden.gardener.cloud/id": string(garden.UID),
+			"garden.gardener.cloud/id":              string(garden.UID),
+			"garden.gardener.cloud/name":            garden.Name,
+			"garden.gardener.cloud/clusterIdentity": garden.Spec.VirtualCluster.Gardener.ClusterIdentity,
 		}
 		caRotationPhase = operatorv1alpha1helper.GetCARotationPhase(garden.Status.Credentials)
 	default:
