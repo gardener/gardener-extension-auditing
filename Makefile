@@ -146,3 +146,6 @@ extension-operator-up: $(SKAFFOLD) $(KIND) $(HELM) $(KUBECTL)
 
 extension-operator-down: $(SKAFFOLD) $(HELM) $(KUBECTL)
 	$(SKAFFOLD) delete
+
+ci-e2e-kind:
+	./hack/ci-e2e-kind.sh
