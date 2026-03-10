@@ -13,6 +13,7 @@ import (
 	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	resourcesv1alpha1 "github.com/gardener/gardener/pkg/apis/resources/v1alpha1"
 	"github.com/gardener/gardener/pkg/client/kubernetes"
+	monitoringutils "github.com/gardener/gardener/pkg/component/observability/monitoring/utils"
 	"github.com/gardener/gardener/pkg/resourcemanager/controller/garbagecollector/references"
 	kubernetesutils "github.com/gardener/gardener/pkg/utils/kubernetes"
 	"github.com/gardener/gardener/pkg/utils/retry"
@@ -24,6 +25,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
+	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -64,6 +66,7 @@ var _ = Describe("AuditlogForwarder", func() {
 
 		expectedDeployment          *appsv1.Deployment
 		expectedService             *corev1.Service
+		expectedServiceMonitor      *monitoringv1.ServiceMonitor
 		expectedPodDisruptionBudget *policyv1.PodDisruptionBudget
 		expectedVPA                 *vpaautoscalingv1.VerticalPodAutoscaler
 		expectedServiceAccount      *corev1.ServiceAccount
@@ -224,6 +227,10 @@ var _ = Describe("AuditlogForwarder", func() {
 										Name:          "https",
 										ContainerPort: 10443,
 									},
+									{
+										Name:          "metrics",
+										ContainerPort: 8080,
+									},
 								},
 								SecurityContext: &corev1.SecurityContext{
 									AllowPrivilegeEscalation: ptr.To(false),
@@ -332,6 +339,7 @@ var _ = Describe("AuditlogForwarder", func() {
 				Namespace: namespace,
 				Annotations: map[string]string{
 					"networking.resources.gardener.cloud/from-all-webhook-targets-allowed-ports": `[{"protocol":"TCP","port":10443}]`,
+					"networking.resources.gardener.cloud/from-all-scrape-targets-allowed-ports":  `[{"protocol":"TCP","port":8080}]`,
 				},
 				Labels: map[string]string{
 					"app.kubernetes.io/name":    "auditlog-forwarder",
@@ -349,7 +357,30 @@ var _ = Describe("AuditlogForwarder", func() {
 						Port:       10443,
 						TargetPort: intstr.FromInt(10443),
 					},
+					{
+						Name:       "metrics",
+						Port:       8080,
+						TargetPort: intstr.FromInt(8080),
+					},
 				},
+			},
+		}
+
+		expectedServiceMonitor = &monitoringv1.ServiceMonitor{
+			ObjectMeta: monitoringutils.ConfigObjectMeta("auditlog-forwarder", namespace, "shoot"),
+			Spec: monitoringv1.ServiceMonitorSpec{
+				Selector: metav1.LabelSelector{MatchLabels: map[string]string{
+					"app.kubernetes.io/name":    "auditlog-forwarder",
+					"app.kubernetes.io/part-of": "auditing",
+				}},
+				Endpoints: []monitoringv1.Endpoint{{
+					Port: "metrics",
+					MetricRelabelConfigs: monitoringutils.StandardMetricRelabelConfig(
+						"auditlog_forwarder_.+",
+						"go_.+",
+						"process_.+",
+					),
+				}},
 			},
 		}
 
@@ -554,6 +585,7 @@ var _ = Describe("AuditlogForwarder", func() {
 					expectedPodDisruptionBudget,
 					expectedKubeconfigSecret,
 					expectedService,
+					expectedServiceMonitor,
 					expectedConfigMap,
 					expectedDeployment,
 				}
