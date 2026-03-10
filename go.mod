@@ -220,7 +220,9 @@ require (
 	istio.io/client-go v1.27.2 // indirect
 	k8s.io/apiextensions-apiserver v0.34.3 // indirect
 	k8s.io/apiserver v0.34.3 // indirect
+	k8s.io/cluster-bootstrap v0.34.3 // indirect
 	k8s.io/code-generator v0.34.3 // indirect
+	k8s.io/component-helpers v0.34.3 // indirect
 	k8s.io/gengo v0.0.0-20230829151522-9cce18d56c01 // indirect
 	k8s.io/gengo/v2 v2.0.0-20250820003526-c297c0c1eb9d // indirect
 	k8s.io/klog v1.0.0 // indirect
