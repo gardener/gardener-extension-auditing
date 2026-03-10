@@ -58,6 +58,7 @@ docker-images:
 .PHONY: tidy
 tidy:
 	@GO111MODULE=on go mod tidy
+	@mkdir -p $(REPO_ROOT)/.ci/hack && cp $(GARDENER_HACK_DIR)/.ci/set_dependency_version $(REPO_ROOT)/.ci/hack/set_dependency_version && chmod +xw $(REPO_ROOT)/.ci/hack/set_dependency_version
 
 .PHONY: clean
 clean:
