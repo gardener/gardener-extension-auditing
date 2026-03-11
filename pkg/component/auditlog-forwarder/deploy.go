@@ -68,6 +68,8 @@ type Values struct {
 // Output defines a destination where audit events will be forwarded.
 // This structure allows for extensibility to support additional output types in the future.
 type Output struct {
+	// DeliveryMode specifies how messages are delivered to this output.
+	DeliveryMode forwarderconfigv1alpha1.DeliveryMode
 	// HTTP specifies the configuration for an HTTP-based audit output.
 	// When configured, audit events will be forwarded to the specified HTTP endpoint.
 	HTTP *OutputHTTP
@@ -229,7 +231,8 @@ func (r *AuditlogForwarder) computeResourcesData(generatedSecrets map[string]*co
 				httpOut.Compression = *http.Compression
 			}
 			forwarderConfiguration.Outputs = append(forwarderConfiguration.Outputs, forwarderconfigv1alpha1.Output{
-				HTTP: &httpOut,
+				DeliveryMode: output.DeliveryMode,
+				HTTP:         &httpOut,
 			})
 		}
 	}
