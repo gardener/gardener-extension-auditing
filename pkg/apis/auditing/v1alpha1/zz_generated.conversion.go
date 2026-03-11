@@ -12,6 +12,7 @@ package v1alpha1
 import (
 	unsafe "unsafe"
 
+	configv1alpha1 "github.com/gardener/auditlog-forwarder/pkg/apis/config/v1alpha1"
 	auditing "github.com/gardener/gardener-extension-auditing/pkg/apis/auditing"
 	conversion "k8s.io/apimachinery/pkg/conversion"
 	runtime "k8s.io/apimachinery/pkg/runtime"
@@ -68,6 +69,7 @@ func RegisterConversions(s *runtime.Scheme) error {
 }
 
 func autoConvert_v1alpha1_AuditBackend_To_auditing_AuditBackend(in *AuditBackend, out *auditing.AuditBackend, s conversion.Scope) error {
+	out.DeliveryMode = configv1alpha1.DeliveryMode(in.DeliveryMode)
 	out.HTTP = (*auditing.BackendHTTP)(unsafe.Pointer(in.HTTP))
 	return nil
 }
@@ -78,6 +80,7 @@ func Convert_v1alpha1_AuditBackend_To_auditing_AuditBackend(in *AuditBackend, ou
 }
 
 func autoConvert_auditing_AuditBackend_To_v1alpha1_AuditBackend(in *auditing.AuditBackend, out *AuditBackend, s conversion.Scope) error {
+	out.DeliveryMode = configv1alpha1.DeliveryMode(in.DeliveryMode)
 	out.HTTP = (*BackendHTTP)(unsafe.Pointer(in.HTTP))
 	return nil
 }
