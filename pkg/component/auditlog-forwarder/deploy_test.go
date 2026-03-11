@@ -453,6 +453,7 @@ var _ = Describe("AuditlogForwarder", func() {
 					},
 				},
 			},
+			Replicas: 1,
 		}
 		deployer = auditlogforwarder.New(fakeClient, fakeClient, namespace, fakeSecretManager, values)
 

@@ -63,6 +63,9 @@ type Values struct {
 
 	// ExtensionClass is the class of the extension (e.g., "shoot" or "garden").
 	ExtensionClass extensionsv1alpha1.ExtensionClass
+
+	// Replicas is the number of replicas for the auditlog-forwarder deployment.
+	Replicas int32
 }
 
 // Output defines a destination where audit events will be forwarded.
@@ -263,7 +266,7 @@ func (r *AuditlogForwarder) computeResourcesData(generatedSecrets map[string]*co
 			Labels:    utils.MergeStringMaps(getLabels(), getHALabels()),
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas:             ptr.To[int32](1),
+			Replicas:             ptr.To(r.values.Replicas),
 			RevisionHistoryLimit: ptr.To[int32](2),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: getLabels(),

@@ -77,7 +77,7 @@ func (a *actuator) Reconcile(ctx context.Context, log logr.Logger, ex *extension
 	}
 
 	var (
-		// hibernated                  bool // TODO replicas
+		replicas       int32 = 1
 		secretsManager secretsmanager.Interface
 
 		referencedResources []gardencorev1beta1.NamedResourceReference
@@ -97,7 +97,7 @@ func (a *actuator) Reconcile(ctx context.Context, log logr.Logger, ex *extension
 		}
 
 		if v1beta1helper.HibernationIsEnabled(cluster.Shoot) {
-			return nil
+			replicas = 0
 		}
 		secretsManager, err = extensionssecretsmanager.SecretsManagerForCluster(
 			ctx,
@@ -189,6 +189,7 @@ func (a *actuator) Reconcile(ctx context.Context, log logr.Logger, ex *extension
 		MetadataAnnotations: gardenerMetadata,
 		AuditOutputs:        outputs,
 		ExtensionClass:      extensionClass,
+		Replicas:            replicas,
 	})
 
 	if err = forwarder.Deploy(ctx); err != nil {
