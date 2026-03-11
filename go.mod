@@ -10,7 +10,7 @@ tool (
 )
 
 require (
-	github.com/gardener/auditlog-forwarder v0.1.0
+	github.com/gardener/auditlog-forwarder v0.2.0
 	github.com/gardener/gardener v1.136.0
 	github.com/go-logr/logr v1.4.3
 	github.com/onsi/ginkgo/v2 v2.28.1

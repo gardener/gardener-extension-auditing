@@ -13,8 +13,10 @@ import (
 	"encoding/pem"
 	"fmt"
 	"net/url"
+	"slices"
 	"strings"
 
+	forwarderconfigv1alpha1 "github.com/gardener/auditlog-forwarder/pkg/apis/config/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	apivalidation "k8s.io/apimachinery/pkg/api/validation"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -28,6 +30,9 @@ import (
 // The following invariants are enforced:
 //   - At least one backend is defined.
 //   - Each backend must specify its transport configuration (currently only HTTP is supported).
+//   - DeliveryMode, if set, must be "Guaranteed" or "BestEffort".
+//   - When only one backend is configured, its deliveryMode must be either "Guaranteed" or unset (not "BestEffort").
+//   - When multiple backends are configured, exactly one must have deliveryMode set to "Guaranteed".
 func ValidateAuditConfiguration(config *auditing.AuditConfiguration, fldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 
@@ -36,9 +41,14 @@ func ValidateAuditConfiguration(config *auditing.AuditConfiguration, fldPath *fi
 	}
 
 	seenBackendSignatures := sets.New[string]()
+	guaranteedCount := 0
 	for i, backend := range config.Backends {
 		backendFldPath := fldPath.Child("backends").Index(i)
 		allErrs = append(allErrs, validateAuditBackend(backend, backendFldPath)...)
+
+		if backend.DeliveryMode == forwarderconfigv1alpha1.DeliveryModeGuaranteed {
+			guaranteedCount++
+		}
 
 		// Simple duplicate detection for identical backend definitions (currently only HTTP URL uniqueness is relevant).
 		if backend.HTTP != nil {
@@ -51,6 +61,14 @@ func ValidateAuditConfiguration(config *auditing.AuditConfiguration, fldPath *fi
 		}
 	}
 
+	if len(config.Backends) == 1 && !slices.Contains([]forwarderconfigv1alpha1.DeliveryMode{"", forwarderconfigv1alpha1.DeliveryModeGuaranteed}, config.Backends[0].DeliveryMode) {
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("backends").Index(0).Child("deliveryMode"), config.Backends[0].DeliveryMode, `deliveryMode must be "Guaranteed" or unset (not "BestEffort") when only one backend is configured`))
+	}
+
+	if len(config.Backends) > 1 && guaranteedCount != 1 {
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("backends"), guaranteedCount, `exactly one backend must have deliveryMode set to "Guaranteed" when multiple backends are configured`))
+	}
+
 	return allErrs
 }
 
@@ -61,6 +79,16 @@ func ValidateAuditConfigurationUpdate(_, newConfig *auditing.AuditConfiguration,
 
 func validateAuditBackend(backend auditing.AuditBackend, fldPath *field.Path) field.ErrorList {
 	var allErrs field.ErrorList
+
+	if backend.DeliveryMode != "" {
+		supportedModes := []forwarderconfigv1alpha1.DeliveryMode{
+			forwarderconfigv1alpha1.DeliveryModeGuaranteed,
+			forwarderconfigv1alpha1.DeliveryModeBestEffort,
+		}
+		if !slices.Contains(supportedModes, backend.DeliveryMode) {
+			allErrs = append(allErrs, field.NotSupported(fldPath.Child("deliveryMode"), backend.DeliveryMode, supportedModes))
+		}
+	}
 
 	if backend.HTTP == nil {
 		allErrs = append(allErrs, field.Required(fldPath.Child("http"), "http backend configuration must be provided"))

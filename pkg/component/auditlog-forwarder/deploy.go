@@ -68,6 +68,8 @@ type Values struct {
 // Output defines a destination where audit events will be forwarded.
 // This structure allows for extensibility to support additional output types in the future.
 type Output struct {
+	// DeliveryMode specifies how messages are delivered to this output.
+	DeliveryMode forwarderconfigv1alpha1.DeliveryMode
 	// HTTP specifies the configuration for an HTTP-based audit output.
 	// When configured, audit events will be forwarded to the specified HTTP endpoint.
 	HTTP *OutputHTTP
@@ -229,7 +231,8 @@ func (r *AuditlogForwarder) computeResourcesData(generatedSecrets map[string]*co
 				httpOut.Compression = *http.Compression
 			}
 			forwarderConfiguration.Outputs = append(forwarderConfiguration.Outputs, forwarderconfigv1alpha1.Output{
-				HTTP: &httpOut,
+				DeliveryMode: output.DeliveryMode,
+				HTTP:         &httpOut,
 			})
 		}
 	}
@@ -331,9 +334,14 @@ func (r *AuditlogForwarder) computeResourcesData(generatedSecrets map[string]*co
 									},
 								}
 
-								// Add volume mounts for each HTTP output TLS secret
+								// Add volume mounts for each unique HTTP output TLS secret
+								seen := make(map[string]struct{})
 								for _, output := range r.values.AuditOutputs {
 									if http := output.HTTP; http != nil && http.TLSSecretName != "" {
+										if _, ok := seen[http.TLSSecretName]; ok {
+											continue
+										}
+										seen[http.TLSSecretName] = struct{}{}
 										volumeMounts = append(volumeMounts, corev1.VolumeMount{
 											Name:      "http-output-" + http.TLSSecretName,
 											ReadOnly:  true,
@@ -392,9 +400,14 @@ func (r *AuditlogForwarder) computeResourcesData(generatedSecrets map[string]*co
 							},
 						}
 
-						// Add volumes for each HTTP output TLS secret
+						// Add volumes for each unique HTTP output TLS secret
+						seen := make(map[string]struct{})
 						for _, output := range r.values.AuditOutputs {
 							if http := output.HTTP; http != nil && http.TLSSecretName != "" {
+								if _, ok := seen[http.TLSSecretName]; ok {
+									continue
+								}
+								seen[http.TLSSecretName] = struct{}{}
 								secretVolumeSource := &corev1.SecretVolumeSource{
 									SecretName: http.TLSSecretName,
 									Items: []corev1.KeyToPath{
