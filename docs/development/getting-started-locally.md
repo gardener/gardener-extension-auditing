@@ -59,10 +59,10 @@ The make target will then deploy the auditing admission component. It will build
 
 ## Setup with Gardener Operator
 
-Alternatively, you can deploy the auditing extension in the `gardener-operator` local setup. To do this, make sure you are have a running local setup based on [Alternative Way to Set Up Garden and Seed Leveraging `gardener-operator`](https://github.com/gardener/gardener/blob/master/docs/deployment/getting_started_locally.md#alternative-way-to-set-up-garden-and-seed-leveraging-gardener-operator). The `KUBECONFIG` environment variable should target the operator local KinD cluster (i.e. `<path_to_gardener_project>/example/gardener-local/kind/multi-zone/kubeconfig`).
+Alternatively, you can deploy the auditing extension in the `gardener-operator` local setup. To do this, make sure you are have a running local setup based on [Alternative Way to Set Up Garden and Seed Leveraging `gardener-operator`](https://github.com/gardener/gardener/blob/master/docs/deployment/getting_started_locally.md#alternative-way-to-set-up-garden-and-seed-leveraging-gardener-operator). The `KUBECONFIG` environment variable should target the operator local KinD cluster (i.e. `<path_to_gardener_project>/dev-setup/kubeconfigs/runtime/kubeconfig`).
 
 ```bash
-export KUBECONFIG=$(pwd)/../gardener/example/gardener-local/kind/multi-zone/kubeconfig
+export KUBECONFIG=$(pwd)/../gardener/dev-setup/kubeconfigs/runtime/kubeconfig
 ```
 
 ### Creating the auditing `Extension.operator.gardener.cloud` resource:
@@ -108,7 +108,7 @@ The corresponding make target will build the auditing admission and extension co
 [`example/local-setup/netpol.yaml`](../../example/local-setup/netpol.yaml) contains a NetworkPolicy allowing communication between the auditlog forwarder and the echo server:
 
     ```bash
-    kubectl --kubeconfig $(pwd)/../gardener/example/gardener-local/kind/multi-zone/kubeconfig apply -f example/local-setup/netpol.yaml
+    kubectl --kubeconfig $(pwd)/../gardener/dev-setup/kubeconfigs/runtime/kubeconfig apply -f example/local-setup/netpol.yaml
     ```
 
 ### Enable the extension for the Garden cluster
@@ -116,7 +116,7 @@ The corresponding make target will build the auditing admission and extension co
 1. Target the runtime cluster
 
     ```bash
-    export KUBECONFIG=$(pwd)/../gardener/example/gardener-local/kind/multi-zone/kubeconfig
+    export KUBECONFIG=$(pwd)/../gardener/dev-setup/kubeconfigs/runtime/kubeconfig
     ```
 
 1. Create a secret containing the credentials used for mTLS.

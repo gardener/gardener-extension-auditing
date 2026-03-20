@@ -16,6 +16,7 @@ import (
 	resourcesv1alpha1 "github.com/gardener/gardener/pkg/apis/resources/v1alpha1"
 	"github.com/gardener/gardener/pkg/client/kubernetes"
 	"github.com/gardener/gardener/pkg/component"
+	monitoringutils "github.com/gardener/gardener/pkg/component/observability/monitoring/utils"
 	"github.com/gardener/gardener/pkg/resourcemanager/controller/garbagecollector/references"
 	"github.com/gardener/gardener/pkg/utils"
 	gardenerutils "github.com/gardener/gardener/pkg/utils/gardener"
@@ -25,6 +26,7 @@ import (
 	"github.com/gardener/gardener/pkg/utils/retry"
 	secretsutils "github.com/gardener/gardener/pkg/utils/secrets"
 	secretsmanager "github.com/gardener/gardener/pkg/utils/secrets/manager"
+	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -193,14 +195,15 @@ func (r *AuditlogForwarder) WaitCleanup(ctx context.Context) error {
 
 func (r *AuditlogForwarder) computeResourcesData(generatedSecrets map[string]*corev1.Secret, caBundle *corev1.Secret) (map[string][]byte, error) {
 	var (
-		priorityClassName = v1beta1constants.PriorityClassNameShootControlPlane500
-		// TODO metrics handling
-		// allScrapeTargetsFn       = gutil.InjectNetworkPolicyAnnotationsForScrapeTargets
-		// serviceMonitorObjectMeta = monitoringutils.ConfigObjectMeta(constants.ApplicationName, namespace, "shoot")
+		priorityClassName            = v1beta1constants.PriorityClassNameShootControlPlane500
+		prometheusLabel              = "shoot"
+		injectScrapeTargetAnnotation = gardenerutils.InjectNetworkPolicyAnnotationsForScrapeTargets
 	)
 
 	if r.values.ExtensionClass == extensionsv1alpha1.ExtensionClassGarden {
 		priorityClassName = v1beta1constants.PriorityClassNameGardenSystem500
+		prometheusLabel = "garden"
+		injectScrapeTargetAnnotation = gardenerutils.InjectNetworkPolicyAnnotationsForGardenScrapeTargets
 	}
 
 	forwarderConfiguration := forwarderconfigv1alpha1.AuditlogForwarder{
@@ -310,6 +313,10 @@ func (r *AuditlogForwarder) computeResourcesData(generatedSecrets map[string]*co
 								{
 									Name:          "https",
 									ContainerPort: 10443,
+								},
+								{
+									Name:          "metrics",
+									ContainerPort: 8080,
 								},
 							},
 							SecurityContext: &corev1.SecurityContext{
@@ -441,17 +448,16 @@ func (r *AuditlogForwarder) computeResourcesData(generatedSecrets map[string]*co
 			Protocol: ptr.To(corev1.ProtocolTCP),
 			Port:     ptr.To(intstr.FromInt(10443)),
 		}
+		metricsPort = networkingv1.NetworkPolicyPort{
+			Protocol: ptr.To(corev1.ProtocolTCP),
+			Port:     ptr.To(intstr.FromInt(8080)),
+		}
 	)
 	service := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        constants.AuditlogForwarder,
-			Namespace:   r.namespace,
-			Annotations: map[string]string{
-				// "prometheus.io/scrape": "true",
-				// "prometheus.io/port":   metricsPort.Port.String(),
-				// "prometheus.io/name": constants.AuditlogForwarder,
-			},
-			Labels: getLabels(),
+			Name:      constants.AuditlogForwarder,
+			Namespace: r.namespace,
+			Labels:    getLabels(),
 		},
 		Spec: corev1.ServiceSpec{
 			Selector: getLabels(),
@@ -461,6 +467,11 @@ func (r *AuditlogForwarder) computeResourcesData(generatedSecrets map[string]*co
 					Port:       10443,
 					TargetPort: intstr.FromInt(10443),
 				},
+				{
+					Name:       "metrics",
+					Port:       8080,
+					TargetPort: intstr.FromInt(8080),
+				},
 			},
 		},
 	}
@@ -468,21 +479,24 @@ func (r *AuditlogForwarder) computeResourcesData(generatedSecrets map[string]*co
 	if err := gardenerutils.InjectNetworkPolicyAnnotationsForWebhookTargets(service, webhookPort); err != nil {
 		return nil, err
 	}
+	if err := injectScrapeTargetAnnotation(service, metricsPort); err != nil {
+		return nil, err
+	}
 
-	// serviceMonitor := &monitoringv1.ServiceMonitor{
-	// 	ObjectMeta: monitoringutils.ConfigObjectMeta(constants.ApplicationName, r.namespace, "shoot"),
-	// 	Spec: monitoringv1.ServiceMonitorSpec{
-	// 		Selector: metav1.LabelSelector{MatchLabels: getLabels()},
-	// 		Endpoints: []monitoringv1.Endpoint{{
-	// 			Port:                 "http-api",
-	// 			Scheme:               "http",
-	// 			HonorLabels:          false,
-	// 			Path:                 "/api/v2/metrics/prometheus",
-	// 			TLSConfig:            &monitoringv1.TLSConfig{SafeTLSConfig: monitoringv1.SafeTLSConfig{InsecureSkipVerify: ptr.To(true)}},
-	// 			MetricRelabelConfigs: monitoringutils.StandardMetricRelabelConfig("auditing-auditlogforwarder_.+"),
-	// 		}},
-	// 	},
-	// }
+	serviceMonitor := &monitoringv1.ServiceMonitor{
+		ObjectMeta: monitoringutils.ConfigObjectMeta(constants.AuditlogForwarder, r.namespace, prometheusLabel),
+		Spec: monitoringv1.ServiceMonitorSpec{
+			Selector: metav1.LabelSelector{MatchLabels: getLabels()},
+			Endpoints: []monitoringv1.Endpoint{{
+				Port: "metrics",
+				MetricRelabelConfigs: monitoringutils.StandardMetricRelabelConfig(
+					"auditlog_forwarder_.+",
+					"go_.+",
+					"process_.+",
+				),
+			}},
+		},
+	}
 
 	kubeConfig := &clientcmdv1.Config{
 		Clusters: []clientcmdv1.NamedCluster{{
@@ -570,7 +584,7 @@ func (r *AuditlogForwarder) computeResourcesData(generatedSecrets map[string]*co
 		},
 		kubeconfigSecret,
 		service,
-		// serviceMonitor,
+		serviceMonitor,
 		config,
 		deploy,
 	}
