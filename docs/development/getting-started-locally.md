@@ -214,9 +214,3 @@ The corresponding make target will build the auditing admission and extension co
     ```
 
     The corresponding make target will delete the `Extension.operator.gardener.cloud` resource. Consequently, the gardener-operator will delete the auditing admission component and auditing ControllerDeployment and ControllerRegistration resources.
-
-1. Finally delete the `ValidatingWebhookConfiguration` from the Virtual Garden cluster.
-
-    ```bash
-    kubectl --kubeconfig $(pwd)/../gardener/dev-setup/kubeconfigs/virtual-garden/kubeconfig delete validatingwebhookconfiguration gardener-extension-auditing-admission --ignore-not-found
-    ```
