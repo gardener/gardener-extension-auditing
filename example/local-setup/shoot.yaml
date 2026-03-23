@@ -16,6 +16,12 @@ spec:
           url: https://echo-server.echo-server.svc/audit
           tls:
             secretReferenceName: auditlog-creds
+        deliveryMode: Guaranteed
+      # - http:
+      #     url: https://echo-server.echo-server1.svc/audit
+      #     tls:
+      #       secretReferenceName: auditlog-creds
+      #   deliveryMode: BestEffort
   resources:
     - name: auditlog-creds
       resourceRef:

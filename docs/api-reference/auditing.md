@@ -30,6 +30,22 @@ It specifies where audit events should be sent and how they should be delivered.
 <tbody>
 <tr>
 <td>
+<code>deliveryMode</code></br>
+<em>
+github.com/gardener/auditlog-forwarder/pkg/apis/config/v1alpha1.DeliveryMode
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>DeliveryMode specifies how messages are delivered to this backend.
+&ldquo;Guaranteed&rdquo; means the request is considered successful only if this backend succeeds.
+&ldquo;BestEffort&rdquo; means delivery is attempted but failures don&rsquo;t affect request success.
+When only one backend is configured, it is implicitly &ldquo;Guaranteed&rdquo;.
+When multiple backends are configured, exactly one must be &ldquo;Guaranteed&rdquo;.</p>
+</td>
+</tr>
+<tr>
+<td>
 <code>http</code></br>
 <em>
 <a href="#auditing.extensions.gardener.cloud/v1alpha1.BackendHTTP">

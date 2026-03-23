@@ -5,6 +5,7 @@
 package v1alpha1
 
 import (
+	forwarderconfigv1alpha1 "github.com/gardener/auditlog-forwarder/pkg/apis/config/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -21,6 +22,13 @@ type AuditConfiguration struct {
 // AuditBackend defines the configuration for a single audit backend.
 // It specifies where audit events should be sent and how they should be delivered.
 type AuditBackend struct {
+	// DeliveryMode specifies how messages are delivered to this backend.
+	// "Guaranteed" means the request is considered successful only if this backend succeeds.
+	// "BestEffort" means delivery is attempted but failures don't affect request success.
+	// When only one backend is configured, it is implicitly "Guaranteed".
+	// When multiple backends are configured, exactly one must be "Guaranteed".
+	// +optional
+	DeliveryMode forwarderconfigv1alpha1.DeliveryMode `json:"deliveryMode,omitempty"`
 	// HTTP specifies the configuration for an HTTP-based audit backend.
 	// When configured, audit events will be sent via HTTP to the specified endpoint.
 	HTTP *BackendHTTP `json:"http"`

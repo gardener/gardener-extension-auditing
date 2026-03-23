@@ -175,6 +175,7 @@ func (a *actuator) Reconcile(ctx context.Context, log logr.Logger, ex *extension
 
 		_, refSecretContainsCABundle := refSecret.Data["ca.crt"]
 		outputs = append(outputs, auditlogforwarder.Output{
+			DeliveryMode: backend.DeliveryMode,
 			HTTP: &auditlogforwarder.OutputHTTP{
 				URL:                       backend.HTTP.URL,
 				TLSSecretName:             refSecretName,

@@ -12,6 +12,7 @@ import (
 	"encoding/pem"
 	"math/big"
 
+	forwarderconfigv1alpha1 "github.com/gardener/auditlog-forwarder/pkg/apis/config/v1alpha1"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
@@ -106,7 +107,11 @@ var _ = Describe("ValidateAuditConfiguration", func() {
 	})
 
 	It("should detect duplicate backend URLs", func() {
-		base.Backends = append(base.Backends, auditing.AuditBackend{HTTP: &auditing.BackendHTTP{URL: base.Backends[0].HTTP.URL, TLS: auditing.TLSConfig{SecretReferenceName: "audit-secret-2"}}})
+		base.Backends[0].DeliveryMode = forwarderconfigv1alpha1.DeliveryModeGuaranteed
+		base.Backends = append(base.Backends, auditing.AuditBackend{
+			DeliveryMode: forwarderconfigv1alpha1.DeliveryModeBestEffort,
+			HTTP:         &auditing.BackendHTTP{URL: base.Backends[0].HTTP.URL, TLS: auditing.TLSConfig{SecretReferenceName: "audit-secret-2"}},
+		})
 		errs := validation.ValidateAuditConfiguration(&base, field.NewPath("providerConfig"))
 		Expect(errs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
 			"Type":  Equal(field.ErrorTypeDuplicate),
@@ -130,6 +135,95 @@ var _ = Describe("ValidateAuditConfiguration", func() {
 			"Type":   Equal(field.ErrorTypeNotSupported),
 			"Field":  Equal("providerConfig.backends[0].http.compression"),
 			"Detail": Equal("supported values: \"gzip\""),
+		}))))
+	})
+
+	It("should allow omitted deliveryMode for a single backend", func() {
+		base.Backends[0].DeliveryMode = ""
+		errs := validation.ValidateAuditConfiguration(&base, field.NewPath("providerConfig"))
+		Expect(errs).To(BeEmpty())
+	})
+
+	It("should allow Guaranteed deliveryMode for a single backend", func() {
+		base.Backends[0].DeliveryMode = forwarderconfigv1alpha1.DeliveryModeGuaranteed
+		errs := validation.ValidateAuditConfiguration(&base, field.NewPath("providerConfig"))
+		Expect(errs).To(BeEmpty())
+	})
+
+	It("should reject BestEffort deliveryMode for a single backend", func() {
+		base.Backends[0].DeliveryMode = forwarderconfigv1alpha1.DeliveryModeBestEffort
+		errs := validation.ValidateAuditConfiguration(&base, field.NewPath("providerConfig"))
+		Expect(errs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
+			"Type":  Equal(field.ErrorTypeInvalid),
+			"Field": Equal("providerConfig.backends[0].deliveryMode"),
+		}))))
+	})
+
+	It("should reject unsupported deliveryMode", func() {
+		base.Backends[0].DeliveryMode = "AtLeastOnce"
+		errs := validation.ValidateAuditConfiguration(&base, field.NewPath("providerConfig"))
+		Expect(errs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
+			"Type":  Equal(field.ErrorTypeNotSupported),
+			"Field": Equal("providerConfig.backends[0].deliveryMode"),
+		}))))
+	})
+
+	It("should pass with exactly one Guaranteed when multiple backends are configured", func() {
+		base.Backends[0].DeliveryMode = forwarderconfigv1alpha1.DeliveryModeGuaranteed
+		base.Backends = append(base.Backends, auditing.AuditBackend{
+			DeliveryMode: forwarderconfigv1alpha1.DeliveryModeBestEffort,
+			HTTP: &auditing.BackendHTTP{
+				URL: "https://other.example.com/audit",
+				TLS: auditing.TLSConfig{SecretReferenceName: "audit-secret-2"},
+			},
+		})
+		errs := validation.ValidateAuditConfiguration(&base, field.NewPath("providerConfig"))
+		Expect(errs).To(BeEmpty())
+	})
+
+	It("should error when multiple backends have no Guaranteed", func() {
+		base.Backends[0].DeliveryMode = forwarderconfigv1alpha1.DeliveryModeBestEffort
+		base.Backends = append(base.Backends, auditing.AuditBackend{
+			DeliveryMode: forwarderconfigv1alpha1.DeliveryModeBestEffort,
+			HTTP: &auditing.BackendHTTP{
+				URL: "https://other.example.com/audit",
+				TLS: auditing.TLSConfig{SecretReferenceName: "audit-secret-2"},
+			},
+		})
+		errs := validation.ValidateAuditConfiguration(&base, field.NewPath("providerConfig"))
+		Expect(errs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
+			"Type":  Equal(field.ErrorTypeInvalid),
+			"Field": Equal("providerConfig.backends"),
+		}))))
+	})
+
+	It("should error when multiple backends have more than one Guaranteed", func() {
+		base.Backends[0].DeliveryMode = forwarderconfigv1alpha1.DeliveryModeGuaranteed
+		base.Backends = append(base.Backends, auditing.AuditBackend{
+			DeliveryMode: forwarderconfigv1alpha1.DeliveryModeGuaranteed,
+			HTTP: &auditing.BackendHTTP{
+				URL: "https://other.example.com/audit",
+				TLS: auditing.TLSConfig{SecretReferenceName: "audit-secret-2"},
+			},
+		})
+		errs := validation.ValidateAuditConfiguration(&base, field.NewPath("providerConfig"))
+		Expect(errs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
+			"Type":  Equal(field.ErrorTypeInvalid),
+			"Field": Equal("providerConfig.backends"),
+		}))))
+	})
+
+	It("should error when multiple backends have unset deliveryMode", func() {
+		base.Backends = append(base.Backends, auditing.AuditBackend{
+			HTTP: &auditing.BackendHTTP{
+				URL: "https://other.example.com/audit",
+				TLS: auditing.TLSConfig{SecretReferenceName: "audit-secret-2"},
+			},
+		})
+		errs := validation.ValidateAuditConfiguration(&base, field.NewPath("providerConfig"))
+		Expect(errs).To(ContainElement(PointTo(MatchFields(IgnoreExtras, Fields{
+			"Type":  Equal(field.ErrorTypeInvalid),
+			"Field": Equal("providerConfig.backends"),
 		}))))
 	})
 })
