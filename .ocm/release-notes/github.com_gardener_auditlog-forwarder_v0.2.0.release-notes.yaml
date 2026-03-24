@@ -1,3 +1,4 @@
+reference_version: v0.3.0
 ocm:
   component_name: github.com/gardener/auditlog-forwarder
   component_version: v0.2.0
