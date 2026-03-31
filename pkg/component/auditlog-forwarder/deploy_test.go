@@ -305,7 +305,7 @@ var _ = Describe("AuditlogForwarder", func() {
 							{
 								Name: "http-output-audit-backend-tls",
 								VolumeSource: corev1.VolumeSource{
-									Secret: &corev1.SecretVolumeSource{
+									Secret: &corev1.SecretVolumeSource{ // #nosec: G101: Potential hardcoded credentials
 										SecretName: "audit-backend-tls",
 										Items: []corev1.KeyToPath{
 											{
@@ -477,7 +477,7 @@ var _ = Describe("AuditlogForwarder", func() {
 			},
 			AuditOutputs: []auditlogforwarder.Output{
 				{
-					HTTP: &auditlogforwarder.OutputHTTP{
+					HTTP: &auditlogforwarder.OutputHTTP{ // #nosec: G101: Potential hardcoded credentials
 						URL:                       "https://audit-backend.example.com/events",
 						TLSSecretName:             "audit-backend-tls",
 						TLSSecretContainsCABundle: includeCABundle,

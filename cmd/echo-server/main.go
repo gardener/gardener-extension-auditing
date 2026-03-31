@@ -144,12 +144,12 @@ func auditHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if *logBody {
-			log.Printf("Method: %s, Path: %s%s, Body: %s", r.Method, r.URL.Path, clientCertInfo, string(body))
+			log.Printf("Method: %s, Path: %s%s, Body: %s", r.Method, r.URL.Path, clientCertInfo, string(body)) // #nosec: G706: Log injection via taint analysis
 		} else {
-			log.Printf("Method: %s, Path: %s%s", r.Method, r.URL.Path, clientCertInfo)
+			log.Printf("Method: %s, Path: %s%s", r.Method, r.URL.Path, clientCertInfo) // #nosec: G706: Log injection via taint analysis
 		}
 	} else {
-		log.Printf("Method: %s, Path: %s%s", r.Method, r.URL.Path, clientCertInfo)
+		log.Printf("Method: %s, Path: %s%s", r.Method, r.URL.Path, clientCertInfo) // #nosec: G706: Log injection via taint analysis
 	}
 
 	w.Header().Add("Content-Type", "application/json")
