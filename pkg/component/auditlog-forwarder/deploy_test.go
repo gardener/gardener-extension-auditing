@@ -128,8 +128,8 @@ var _ = Describe("AuditlogForwarder", func() {
 					HTTP: &forwarderconfigv1alpha1.OutputHTTP{
 						URL: "https://audit-backend.example.com/events",
 						TLS: &forwarderconfigv1alpha1.ClientTLS{
-							CertFile: "/etc/auditlog-forwarder/outputs/http/audit-backend-tls/client.crt",
-							KeyFile:  "/etc/auditlog-forwarder/outputs/http/audit-backend-tls/client.key",
+							CertFile: "/etc/auditlog-forwarder/outputs/http/audit-backend/client.crt",
+							KeyFile:  "/etc/auditlog-forwarder/outputs/http/audit-backend/client.key",
 						},
 					},
 				},
@@ -137,7 +137,7 @@ var _ = Describe("AuditlogForwarder", func() {
 		}
 
 		if includeCABundle {
-			forwarderConfiguration.Outputs[0].HTTP.TLS.CAFile = "/etc/auditlog-forwarder/outputs/http/audit-backend-tls/ca.crt"
+			forwarderConfiguration.Outputs[0].HTTP.TLS.CAFile = "/etc/auditlog-forwarder/outputs/http/audit-backend/ca.crt"
 		}
 
 		scheme := runtime.NewScheme()
@@ -252,9 +252,9 @@ var _ = Describe("AuditlogForwarder", func() {
 										MountPath: "/etc/auditlog-forwarder/ca",
 									},
 									{
-										Name:      "http-output-audit-backend-tls",
+										Name:      "http-output-audit-backend",
 										ReadOnly:  true,
-										MountPath: "/etc/auditlog-forwarder/outputs/http/audit-backend-tls",
+										MountPath: "/etc/auditlog-forwarder/outputs/http/audit-backend",
 									},
 								},
 							},
@@ -303,10 +303,10 @@ var _ = Describe("AuditlogForwarder", func() {
 								},
 							},
 							{
-								Name: "http-output-audit-backend-tls",
+								Name: "http-output-audit-backend",
 								VolumeSource: corev1.VolumeSource{
-									Secret: &corev1.SecretVolumeSource{ // #nosec: G101: Potential hardcoded credentials
-										SecretName: "audit-backend-tls",
+									Secret: &corev1.SecretVolumeSource{
+										SecretName: "audit-backend",
 										Items: []corev1.KeyToPath{
 											{
 												Key:  "client.crt",
@@ -456,7 +456,7 @@ var _ = Describe("AuditlogForwarder", func() {
 
 		expectedHTTPOutputSecret = &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "audit-backend-tls",
+				Name:      "audit-backend",
 				Namespace: namespace,
 			},
 			Data: map[string][]byte{
@@ -477,9 +477,9 @@ var _ = Describe("AuditlogForwarder", func() {
 			},
 			AuditOutputs: []auditlogforwarder.Output{
 				{
-					HTTP: &auditlogforwarder.OutputHTTP{ // #nosec: G101: Potential hardcoded credentials
+					HTTP: &auditlogforwarder.OutputHTTP{
 						URL:                       "https://audit-backend.example.com/events",
-						TLSSecretName:             "audit-backend-tls",
+						TLSSecretName:             "audit-backend",
 						TLSSecretContainsCABundle: includeCABundle,
 					},
 				},
