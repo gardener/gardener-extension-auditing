@@ -28,6 +28,7 @@ import (
 
 type shootAPIServerEnsurer struct {
 	genericmutator.NoopEnsurer
+
 	client client.Client
 	logger logr.Logger
 }
