@@ -12,6 +12,7 @@ tool (
 require (
 	github.com/gardener/auditlog-forwarder v0.2.0
 	github.com/gardener/gardener v1.139.0
+	github.com/gardener/gardener/pkg/apis v1.139.0
 	github.com/go-logr/logr v1.4.3
 	github.com/onsi/ginkgo/v2 v2.28.1
 	github.com/onsi/gomega v1.39.1
