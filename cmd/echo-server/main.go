@@ -14,6 +14,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"time"
 )
 
@@ -144,12 +145,12 @@ func auditHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if *logBody {
-			log.Printf("Method: %s, Path: %s%s, Body: %s", r.Method, r.URL.Path, clientCertInfo, string(body))
+			log.Printf("Method: %s, Path: %s%s, Body: %s", strconv.Quote(r.Method), strconv.Quote(r.URL.Path), strconv.Quote(clientCertInfo), strconv.Quote(string(body)))
 		} else {
-			log.Printf("Method: %s, Path: %s%s", r.Method, r.URL.Path, clientCertInfo)
+			log.Printf("Method: %s, Path: %s%s", strconv.Quote(r.Method), strconv.Quote(r.URL.Path), strconv.Quote(clientCertInfo))
 		}
 	} else {
-		log.Printf("Method: %s, Path: %s%s", r.Method, r.URL.Path, clientCertInfo)
+		log.Printf("Method: %s, Path: %s%s", strconv.Quote(r.Method), strconv.Quote(r.URL.Path), strconv.Quote(clientCertInfo))
 	}
 
 	w.Header().Add("Content-Type", "application/json")
