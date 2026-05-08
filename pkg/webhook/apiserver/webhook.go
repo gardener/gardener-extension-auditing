@@ -102,12 +102,11 @@ func AddToManager(mgr manager.Manager) (*extensionswebhook.Webhook, error) {
 	}
 
 	webhook := &extensionswebhook.Webhook{
-		Name:     "auditlog",
-		Provider: "",
-		Types:    types,
-		Target:   extensionswebhook.TargetSeed,
-		Path:     "auditlog",
-		Webhook:  &admission.Webhook{Handler: handler},
+		Name:    "auditlog",
+		Types:   types,
+		Target:  extensionswebhook.TargetSeed,
+		Path:    "auditlog",
+		Webhook: &admission.Webhook{Handler: handler},
 		NamespaceSelector: &metav1.LabelSelector{
 			MatchExpressions: []metav1.LabelSelectorRequirement{
 				namespaceLabelSelectorRequirement,

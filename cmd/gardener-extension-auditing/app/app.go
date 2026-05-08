@@ -126,10 +126,11 @@ func (o *Options) run(ctx context.Context, log logr.Logger) error {
 	ctrlConfig := o.auditOptions.Completed()
 	ctrlConfig.Apply(&auditcontroller.DefaultAddOptions.Config)
 	o.controllerOptions.Completed().Apply(&auditcontroller.DefaultAddOptions.ControllerOptions)
-	o.reconcileOptions.Completed().Apply(&auditcontroller.DefaultAddOptions.IgnoreOperationAnnotation, &auditcontroller.DefaultAddOptions.ExtensionClasses)
+	o.reconcileOptions.Completed().Apply(&auditcontroller.DefaultAddOptions.IgnoreOperationAnnotation)
 	o.heartbeatOptions.Completed().Apply(&extensionsheartbeatcontroller.DefaultAddOptions)
 
-	apiserverwebhook.DefaultAddOptions.ExtensionClasses = o.reconcileOptions.Completed().ExtensionClasses
+	auditcontroller.DefaultAddOptions.ExtensionClasses = o.generalOptions.Completed().ExtensionClasses
+	apiserverwebhook.DefaultAddOptions.ExtensionClasses = o.generalOptions.Completed().ExtensionClasses
 
 	if err := o.controllerSwitches.Completed().AddToManager(ctx, mgr); err != nil {
 		return fmt.Errorf("could not add controllers to manager: %w", err)
