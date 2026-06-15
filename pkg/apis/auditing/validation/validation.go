@@ -289,10 +289,10 @@ func publicKeyMatches(privateKey any, publicKey any) bool {
 	switch pk := privateKey.(type) {
 	case *rsa.PrivateKey:
 		pub, ok := publicKey.(*rsa.PublicKey)
-		return ok && pk.N.Cmp(pub.N) == 0 && pk.E == pub.E
+		return ok && pk.PublicKey.Equal(pub)
 	case *ecdsa.PrivateKey:
 		pub, ok := publicKey.(*ecdsa.PublicKey)
-		return ok && pk.X.Cmp(pub.X) == 0 && pk.Y.Cmp(pub.Y) == 0
+		return ok && pk.PublicKey.Equal(pub)
 	case ed25519.PrivateKey:
 		pub, ok := publicKey.(ed25519.PublicKey)
 		return ok && bytes.Equal(pk.Public().(ed25519.PublicKey), pub)
