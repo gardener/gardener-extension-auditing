@@ -10,8 +10,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-
-	"github.com/gardener/gardener-extension-auditing/pkg/constants"
 )
 
 const (
@@ -29,9 +27,8 @@ func New(mgr manager.Manager) (*extensionswebhook.Webhook, error) {
 	apiReader := mgr.GetAPIReader()
 
 	return extensionswebhook.New(mgr, extensionswebhook.Args{
-		Provider: constants.ExtensionType,
-		Name:     Name,
-		Path:     "/webhooks/auditing/secret",
+		Name: Name,
+		Path: "/webhooks/auditing/secret",
 		Validators: map[extensionswebhook.Validator][]extensionswebhook.Type{
 			NewSecretValidator(apiReader, decoder): {{Obj: &corev1.Secret{}}},
 		},
