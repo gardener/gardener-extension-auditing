@@ -1,0 +1,172 @@
+ocm:
+  component_name: github.com/gardener/auditlog-forwarder
+  component_version: v0.3.0
+release_notes:
+- audience: operator
+  author:
+    hostname: github.com
+    type: githubUser
+    username: databus23
+  category: feature
+  contents: Implement hot-reload of TLS client credentials for HTTP outputs.
+  mimetype: text/markdown
+  reference: '[#87](https://github.com/gardener/auditlog-forwarder/pull/87)'
+  type: standard
+- audience: operator
+  author:
+    hostname: github.com
+    type: githubUser
+    username: dependabot[bot]
+  category: other
+  contents: The auditlog-forwarder binary is now built with Go 1.26.4
+  mimetype: text/markdown
+  reference: '[#82](https://github.com/gardener/auditlog-forwarder/pull/82)'
+  type: standard
+- audience: dependency
+  author:
+    hostname: github.com
+    type: githubUser
+    username: dependabot[bot]
+  category: other
+  contents: "The following third party dependencies have been updated:\n- k8s.io/apimachinery\
+    \ v0.34.3 -> v0.35.3\n- k8s.io/apiserver v0.34.3 -> v0.35.3\n- k8s.io/component-base\
+    \ v0.34.3 -> v0.35.3\n- sigs.k8s.io/controller-runtime v0.22.5 -> v.0.23.3\n-\
+    \ github.com/gardener/gardener v1.136.0 -> v1.140.1\n- golang.org/x/mod v0.33.0\
+    \ -> v0.34.0 \n- golang.org/x/net v0.50.0 -> v0.52.0 \n- golang.org/x/oauth2 v0.34.0\
+    \ -> v0.35.0 \n- golang.org/x/sync v0.19.0 -> v0.20.0 \n- golang.org/x/sys v0.41.0\
+    \ -> v0.42.0 \n- golang.org/x/term v0.40.0 -> v0.41.0 \n- golang.org/x/text v0.34.0\
+    \ -> v0.35.0 \n- golang.org/x/time v0.14.0 -> v0.15.0 \n- golang.org/x/tools v0.42.0\
+    \ -> v0.43.0 \n- k8s.io/api v0.34.3 -> v0.35.3\n- k8s.io/apiextensions-apiserver\
+    \ v0.34.3 -> v0.35.3\n- k8s.io/client-go v0.34.3 -> v0.35.3\n- k8s.io/code-generator\
+    \ v0.34.3 -> v0.35.3\n- sigs.k8s.io/controller-tools v0.19.0 -> v0.20.1\n- sigs.k8s.io/structured-merge-diff/v6\
+    \ v6.3.0 -> v6.3.2"
+  mimetype: text/markdown
+  reference: '[#72](https://github.com/gardener/auditlog-forwarder/pull/72)'
+  type: standard
+- audience: operator
+  author:
+    hostname: github.com
+    type: githubUser
+    username: dependabot[bot]
+  category: other
+  contents: Component binaries are now built with Go 1.26.3
+  mimetype: text/markdown
+  reference: '[#76](https://github.com/gardener/auditlog-forwarder/pull/76)'
+  type: standard
+- audience: dependency
+  author:
+    hostname: github.com
+    type: githubUser
+    username: dependabot[bot]
+  category: other
+  contents: |-
+    The following third party dependencies have been updated:
+    - github.com/gardener/gardener v1.142.0 -> v1.142.1
+  mimetype: text/markdown
+  reference: '[#78](https://github.com/gardener/auditlog-forwarder/pull/78)'
+  type: standard
+- audience: dependency
+  author:
+    hostname: github.com
+    type: githubUser
+    username: dependabot[bot]
+  category: other
+  contents: |-
+    The following third party dependency has been updated:
+    - github.com/gardener/gardener v1.144.1 -> v1.144.2
+  mimetype: text/markdown
+  reference: '[#85](https://github.com/gardener/auditlog-forwarder/pull/85)'
+  type: standard
+- audience: dependency
+  author:
+    hostname: github.com
+    type: githubUser
+    username: dependabot[bot]
+  category: other
+  contents: |-
+    The following third party dependencies have been updated:
+    - github.com/gardener/gardener v1.143.0 -> v1.144.1
+    - golang.org/x/crypto v0.51.0 -> v0.52.0
+    - golang.org/x/sys v0.44.0 -> v0.45.0
+  mimetype: text/markdown
+  reference: '[#84](https://github.com/gardener/auditlog-forwarder/pull/84)'
+  type: standard
+- audience: dependency
+  author:
+    hostname: github.com
+    type: githubUser
+    username: dependabot[bot]
+  category: other
+  contents: |-
+    The following third party dependencies have been updated:
+    - github.com/gardener/gardener v1.144.2 -> v1.145.0
+    - golang.org/x/crypto v0.52.0 -> v0.53.0
+    - golang.org/x/mod v0.36.0 -> v0.37.0
+    - golang.org/x/net v0.54.0 -> v0.56.0
+    - golang.org/x/sync v0.20.0 -> v0.21.0
+    - golang.org/x/sys v0.45.0 -> v0.46.0
+    - golang.org/x/term v0.43.0 -> v0.44.0
+    - golang.org/x/text v0.37.0 -> v0.38.0
+    - golang.org/x/tools v0.45.0 -> v0.46.0
+  mimetype: text/markdown
+  reference: '[#86](https://github.com/gardener/auditlog-forwarder/pull/86)'
+  type: standard
+- audience: dependency
+  author:
+    hostname: github.com
+    type: githubUser
+    username: dependabot[bot]
+  category: other
+  contents: "The following third party dependencies have been updated:\n- github.com/gardener/gardener\
+    \ v1.142.2 -> v1.143.0\n- k8s.io/apimachinery v0.35.4 -> v0.35.5\n- k8s.io/apiserver\
+    \ v0.35.4 -> v0.35.5\n- k8s.io/component-base v0.35.4 -> v0.35.5\n- k8s.io/api\
+    \ v0.35.4 -> v0.35.5 \n- k8s.io/apiextensions-apiserver v0.35.4 -> v0.35.5 \n\
+    - k8s.io/client-go v0.35.4 -> v0.35.5 \n- k8s.io/code-generator v0.35.4 -> v0.35.5\
+    \ \n- golang.org/x/crypto v0.50.0 -> v0.51.0\n- golang.org/x/mod v0.35.0 -> v0.36.0\n\
+    - golang.org/x/net v0.53.0 -> v0.54.0\n- golang.org/x/sys v0.43.0 -> v0.44.0\n\
+    - golang.org/x/term v0.42.0 -> v0.43.0\n- golang.org/x/text v0.36.0 -> v0.37.0\n\
+    - golang.org/x/tools v0.44.0 -> v0.45.0"
+  mimetype: text/markdown
+  reference: '[#80](https://github.com/gardener/auditlog-forwarder/pull/80)'
+  type: standard
+- audience: dependency
+  author:
+    hostname: github.com
+    type: githubUser
+    username: dependabot[bot]
+  category: other
+  contents: |-
+    The following third party dependencies have been updated:
+    - github.com/Masterminds/semver/v3 v3.4.0 -> v3.5.0
+    - github.com/gardener/gardener v1.140.1 -> v1.142.0
+    - go.yaml.in/yaml/v2 v2.4.3 -> v2.4.4
+    - golang.org/x/crypto v0.49.0 -> v0.50.0
+    - golang.org/x/mod v0.34.0 -> v0.35.0
+    - golang.org/x/net v0.52.0 -> v0.53.0
+    - golang.org/x/oauth2 v0.35.0 -> v0.36.0
+    - golang.org/x/sys v0.42.0 -> v0.43.0
+    - golang.org/x/term v0.41.0 -> v0.42.0
+    - golang.org/x/text v0.35.0 -> v0.36.0
+    - golang.org/x/tools v0.43.0 -> v0.44.0
+    - k8s.io/apimachinery v0.35.3 -> v0.35.4
+    - k8s.io/apiserver v0.35.3 -> v0.35.4
+    - k8s.io/component-base v0.35.3 -> v0.35.4
+    - k8s.io/api v0.35.3 -> v0.35.4
+    - k8s.io/apiextensions-apiserver v0.35.3 -> v0.35.4
+    - k8s.io/client-go v0.35.3 -> v0.35.4
+    - k8s.io/code-generator v0.35.3 -> v0.35.4
+  mimetype: text/markdown
+  reference: '[#77](https://github.com/gardener/auditlog-forwarder/pull/77)'
+  type: standard
+- audience: dependency
+  author:
+    hostname: github.com
+    type: githubUser
+    username: dependabot[bot]
+  category: other
+  contents: |-
+    The following third party dependency has been updated:
+    - github.com/gardener/gardener v1.142.1 -> v1.142.2
+  mimetype: text/markdown
+  reference: '[#79](https://github.com/gardener/auditlog-forwarder/pull/79)'
+  type: standard
