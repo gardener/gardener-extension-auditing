@@ -14,7 +14,6 @@ build:
             - cmd/gardener-extension-auditing
             - cmd/gardener-extension-auditing/app
             - imagevector
-            - imagevector/images.yaml
             - pkg/apis/auditing
             - pkg/apis/auditing/install
             - pkg/apis/auditing/v1alpha1
