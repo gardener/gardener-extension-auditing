@@ -16,9 +16,9 @@ source "${CODE_GEN_DIR}/kube_codegen.sh"
 PROJECT_ROOT=$(dirname $0)/..
 
 kube::codegen::gen_helpers \
-  --boilerplate "${GARDENER_HACK_DIR}/LICENSE_BOILERPLATE.txt" \
+  --boilerplate "${PROJECT_ROOT}/hack/LICENSE_BOILERPLATE.txt" \
   "${PROJECT_ROOT}/pkg/apis/config"
 
 kube::codegen::gen_helpers \
-  --boilerplate "${GARDENER_HACK_DIR}/LICENSE_BOILERPLATE.txt" \
+  --boilerplate "${PROJECT_ROOT}/hack/LICENSE_BOILERPLATE.txt" \
   "${PROJECT_ROOT}/pkg/apis/auditing"
