@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# SPDX-FileCopyrightText: SAP SE or an SAP affiliate company and Gardener contributors
+# SPDX-FileCopyrightText: Contributors to the Gardener project
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -16,9 +16,9 @@ source "${CODE_GEN_DIR}/kube_codegen.sh"
 PROJECT_ROOT=$(dirname $0)/..
 
 kube::codegen::gen_helpers \
-  --boilerplate "${GARDENER_HACK_DIR}/LICENSE_BOILERPLATE.txt" \
+  --boilerplate "${PROJECT_ROOT}/hack/LICENSE_BOILERPLATE.txt" \
   "${PROJECT_ROOT}/pkg/apis/config"
 
 kube::codegen::gen_helpers \
-  --boilerplate "${GARDENER_HACK_DIR}/LICENSE_BOILERPLATE.txt" \
+  --boilerplate "${PROJECT_ROOT}/hack/LICENSE_BOILERPLATE.txt" \
   "${PROJECT_ROOT}/pkg/apis/auditing"
