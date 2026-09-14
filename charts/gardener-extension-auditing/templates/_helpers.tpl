@@ -1,5 +1,6 @@
 {{- define "name" -}}
-{{- if .Values.gardener.runtimeCluster.enabled -}}
+{{- /* TODO(vpnachev): Remove gardener.runtimeCluster.enabled, replaced by gardener.clusterTypes.gardenRuntimeCluster, it will be no longer supported by Gardener after v1.159.0 is released. */}}
+{{- if (or .Values.gardener.clusterTypes.gardenRuntimeCluster .Values.gardener.runtimeCluster.enabled) -}}
 gardener-extension-auditing-runtime
 {{- else -}}
 gardener-extension-auditing

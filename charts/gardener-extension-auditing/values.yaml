@@ -30,8 +30,8 @@ healthPort: 8081
 controllers:
   extension:
     concurrentSyncs: 5
-  heartbeat: 
-    renewIntervalSeconds: 30 
+  heartbeat:
+    renewIntervalSeconds: 30
   ignoreOperationAnnotation: false
 
 webhookConfig:
@@ -44,6 +44,6 @@ imageVectorOverwrite: {}
 
 gardener:
   version: ""
-
-  runtimeCluster:
-    enabled: false
+  clusterTypes:
+    gardenRuntimeCluster: false
+  runtimeCluster: {}

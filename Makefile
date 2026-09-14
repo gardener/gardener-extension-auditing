@@ -132,16 +132,6 @@ export SKAFFOLD_PUSH = true
 # use static label for skaffold to prevent rolling all gardener components on every `skaffold` invocation
 export SKAFFOLD_LABEL = skaffold.dev/run-id=extension-local
 
-extension-up: $(SKAFFOLD) $(KIND) $(HELM) $(KUBECTL)
-	@LD_FLAGS=$(LD_FLAGS) $(SKAFFOLD) run
-
-extension-dev: $(SKAFFOLD) $(HELM) $(KUBECTL)
-	$(SKAFFOLD) dev --cleanup=false --trigger=manual
-
-extension-down: $(SKAFFOLD) $(HELM) $(KUBECTL)
-	$(SKAFFOLD) delete
-	$(KUBECTL) delete validatingwebhookconfiguration gardener-extension-auditing-admission --ignore-not-found
-
 extension-operator-up extension-operator-down: export SKAFFOLD_FILENAME = skaffold-operator.yaml
 extension-operator-up: $(SKAFFOLD) $(KIND) $(HELM) $(KUBECTL)
 	@LD_FLAGS=$(LD_FLAGS) GARDENER_HACK_DIR=$(GARDENER_HACK_DIR) $(SKAFFOLD) run
