@@ -31,3 +31,4 @@ service:
 gardener:
   runtimeCluster: {}
 #   priorityClassName: gardener-garden-system-400
+  virtualCluster: {}
