@@ -34,7 +34,7 @@ spec:
         networking.gardener.cloud/to-dns: allowed
         networking.resources.gardener.cloud/to-all-shoots-kube-apiserver-tcp-443: allowed
     spec:
-      {{- if .Values.gardener.runtimeCluster }}
+      {{- if (and .Values.gardener.runtimeCluster .Values.gardener.runtimeCluster.priorityClassName) }}
       priorityClassName: {{ .Values.gardener.runtimeCluster.priorityClassName }}
       {{- else }}
       priorityClassName: gardener-system-900
