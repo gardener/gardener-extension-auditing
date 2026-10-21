@@ -12,7 +12,6 @@ package v1alpha1
 import (
 	unsafe "unsafe"
 
-	configv1alpha1 "github.com/gardener/auditlog-forwarder/pkg/apis/config/v1alpha1"
 	auditing "github.com/gardener/gardener-extension-auditing/pkg/apis/auditing"
 	conversion "k8s.io/apimachinery/pkg/conversion"
 	runtime "k8s.io/apimachinery/pkg/runtime"
@@ -69,8 +68,7 @@ func RegisterConversions(s *runtime.Scheme) error {
 }
 
 func autoConvert_v1alpha1_AuditBackend_To_auditing_AuditBackend(in *AuditBackend, out *auditing.AuditBackend, s conversion.Scope) error {
-	out.DeliveryMode = configv1alpha1.DeliveryMode(in.DeliveryMode)
-	out.HTTP = (*auditing.BackendHTTP)(unsafe.Pointer(in.HTTP))
+	*out = *(*auditing.AuditBackend)(unsafe.Pointer(in))
 	return nil
 }
 
@@ -80,8 +78,7 @@ func Convert_v1alpha1_AuditBackend_To_auditing_AuditBackend(in *AuditBackend, ou
 }
 
 func autoConvert_auditing_AuditBackend_To_v1alpha1_AuditBackend(in *auditing.AuditBackend, out *AuditBackend, s conversion.Scope) error {
-	out.DeliveryMode = configv1alpha1.DeliveryMode(in.DeliveryMode)
-	out.HTTP = (*BackendHTTP)(unsafe.Pointer(in.HTTP))
+	*out = *(*AuditBackend)(unsafe.Pointer(in))
 	return nil
 }
 
@@ -111,11 +108,7 @@ func Convert_auditing_AuditConfiguration_To_v1alpha1_AuditConfiguration(in *audi
 }
 
 func autoConvert_v1alpha1_BackendHTTP_To_auditing_BackendHTTP(in *BackendHTTP, out *auditing.BackendHTTP, s conversion.Scope) error {
-	out.URL = in.URL
-	if err := Convert_v1alpha1_TLSConfig_To_auditing_TLSConfig(&in.TLS, &out.TLS, s); err != nil {
-		return err
-	}
-	out.Compression = (*string)(unsafe.Pointer(in.Compression))
+	*out = *(*auditing.BackendHTTP)(unsafe.Pointer(in))
 	return nil
 }
 
@@ -125,11 +118,7 @@ func Convert_v1alpha1_BackendHTTP_To_auditing_BackendHTTP(in *BackendHTTP, out *
 }
 
 func autoConvert_auditing_BackendHTTP_To_v1alpha1_BackendHTTP(in *auditing.BackendHTTP, out *BackendHTTP, s conversion.Scope) error {
-	out.URL = in.URL
-	if err := Convert_auditing_TLSConfig_To_v1alpha1_TLSConfig(&in.TLS, &out.TLS, s); err != nil {
-		return err
-	}
-	out.Compression = (*string)(unsafe.Pointer(in.Compression))
+	*out = *(*BackendHTTP)(unsafe.Pointer(in))
 	return nil
 }
 
@@ -139,7 +128,7 @@ func Convert_auditing_BackendHTTP_To_v1alpha1_BackendHTTP(in *auditing.BackendHT
 }
 
 func autoConvert_v1alpha1_TLSConfig_To_auditing_TLSConfig(in *TLSConfig, out *auditing.TLSConfig, s conversion.Scope) error {
-	out.SecretReferenceName = in.SecretReferenceName
+	*out = *(*auditing.TLSConfig)(unsafe.Pointer(in))
 	return nil
 }
 
@@ -149,7 +138,7 @@ func Convert_v1alpha1_TLSConfig_To_auditing_TLSConfig(in *TLSConfig, out *auditi
 }
 
 func autoConvert_auditing_TLSConfig_To_v1alpha1_TLSConfig(in *auditing.TLSConfig, out *TLSConfig, s conversion.Scope) error {
-	out.SecretReferenceName = in.SecretReferenceName
+	*out = *(*TLSConfig)(unsafe.Pointer(in))
 	return nil
 }
 
