@@ -93,6 +93,12 @@ rules:
   - patch
 {{- end }}
 - apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - list
+- apiGroups:
   - ""
   resources:
   - pods
