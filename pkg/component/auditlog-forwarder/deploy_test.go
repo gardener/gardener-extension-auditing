@@ -654,6 +654,7 @@ var _ = Describe("AuditlogForwarder", func() {
 					Name:       "auditlog-forwarder",
 					Namespace:  namespace,
 					Generation: 1,
+					UID:        "deployment-uid",
 				},
 				Spec: appsv1.DeploymentSpec{
 					Replicas: ptr.To[int32](1),
@@ -731,6 +732,18 @@ var _ = Describe("AuditlogForwarder", func() {
 
 				Expect(fakeClient.Create(ctx, deploymentInNamespace)).To(Succeed())
 
+				// Create a replicaSet that matches deployment
+				replicaSet := &appsv1.ReplicaSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            deploymentInNamespace.Name + "-abcd",
+						Namespace:       deploymentInNamespace.Namespace,
+						UID:             "replicaset-uid",
+						Labels:          deploymentInNamespace.Spec.Selector.MatchLabels,
+						OwnerReferences: []metav1.OwnerReference{*metav1.NewControllerRef(deploymentInNamespace, appsv1.SchemeGroupVersion.WithKind("Deployment"))},
+					},
+				}
+				Expect(fakeClient.Create(ctx, replicaSet)).To(Succeed())
+
 				// Create a pod that matches the deployment's selector
 				pod := &corev1.Pod{
 					ObjectMeta: metav1.ObjectMeta{
@@ -740,6 +753,7 @@ var _ = Describe("AuditlogForwarder", func() {
 							"app.kubernetes.io/name":    "auditlog-forwarder",
 							"app.kubernetes.io/part-of": "auditing",
 						},
+						OwnerReferences: []metav1.OwnerReference{*metav1.NewControllerRef(replicaSet, appsv1.SchemeGroupVersion.WithKind("ReplicaSet"))},
 					},
 					Status: corev1.PodStatus{
 						Phase: corev1.PodRunning,
