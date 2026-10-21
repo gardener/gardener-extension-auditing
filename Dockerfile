@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 ############# builder
-FROM golang:1.27.0 AS builder
+FROM golang:1.27.3 AS builder
 
 WORKDIR /go/src/github.com/gardener/gardener-extension-auditing
 
@@ -19,7 +19,7 @@ ARG EFFECTIVE_VERSION
 RUN make install EFFECTIVE_VERSION=$EFFECTIVE_VERSION
 
 ############# base
-FROM gcr.io/distroless/static-debian12:nonroot AS base
+FROM gcr.io/distroless/static-debian13:nonroot AS base
 WORKDIR /
 
 ############# gardener-extension-auditing

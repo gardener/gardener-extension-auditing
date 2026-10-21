@@ -88,7 +88,7 @@ generate: $(CONTROLLER_GEN) $(EXTENSION_GEN) $(CRD_REF_DOCS) $(HELM) $(KUSTOMIZE
 
 .PHONY: generate-in-docker
 generate-in-docker:
-	docker run --rm -it -v $(PWD):/go/src/github.com/gardener/gardener-extension-auditing golang:1.26.2 \
+	docker run --rm -it -v $(PWD):/go/src/github.com/gardener/gardener-extension-auditing golang:1.27.3 \
 		sh -c "cd /go/src/github.com/gardener/gardener-extension-auditing \
 				&& make tidy generate \
 				&& chown -R $(shell id -u):$(shell id -g) ."
