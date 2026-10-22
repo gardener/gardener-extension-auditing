@@ -34,7 +34,7 @@ spec:
         networking.gardener.cloud/to-dns: allowed
         networking.resources.gardener.cloud/to-all-shoots-kube-apiserver-tcp-443: allowed
     spec:
-      {{- if .Values.gardener.runtimeCluster }}
+      {{- if (and .Values.gardener.runtimeCluster .Values.gardener.runtimeCluster.priorityClassName) }}
       priorityClassName: {{ .Values.gardener.runtimeCluster.priorityClassName }}
       {{- else }}
       priorityClassName: gardener-system-900
@@ -59,8 +59,8 @@ spec:
         - --metrics-bind-address=:{{ .Values.metrics.port }}
         {{- end }}
         - --health-bind-address=:{{ .Values.healthPort }}
-        {{- /* TODO(vpnachev): Remove gardener.runtimeCluster.enabled, replaced by gardener.clusterTypes.gardenRuntimeCluster, it will be no longer supported by Gardener after v1.159.0 is released. */}}
-        {{- if (or .Values.gardener.clusterTypes.gardenRuntimeCluster .Values.gardener.runtimeCluster.enabled) }}
+        {{- /* TODO(vpnachev): Remove gardener.runtimeCluster.enabled, replaced by gardener.runtimeCluster, it will be no longer supported by Gardener after v1.159.0 is released. */}}
+        {{- if (or .Values.gardener.runtimeCluster (.Values | merge (dict) | dig "gardener" "runtimeCluster" "enabled" false)) }}
         - --extension-classes=garden
         {{- else }}
         - --extension-classes=shoot
