@@ -21,12 +21,18 @@ spec:
       helm:
         ociRepository:
           ref: local-skaffold/gardener-extension-auditing/charts/extension
+          caBundleSecretRef:
+            name: gardener-local-registry-ca
     admission:
       runtimeCluster:
         helm:
           ociRepository:
             ref: local-skaffold/gardener-extension-auditing-admission/charts/runtime
+            caBundleSecretRef:
+              name: gardener-local-registry-ca
       virtualCluster:
         helm:
           ociRepository:
             ref: local-skaffold/gardener-extension-auditing-admission/charts/application
+            caBundleSecretRef:
+              name: gardener-local-registry-ca

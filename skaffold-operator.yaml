@@ -3,8 +3,6 @@ kind: Config
 metadata:
   name: operator
 build:
-  insecureRegistries:
-    - registry.local.gardener.cloud:5001
   artifacts:
     - image: local-skaffold/gardener-extension-auditing
       ko:
